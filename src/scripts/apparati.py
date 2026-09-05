@@ -1,17 +1,10 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from abc import ABC
 from typing import ClassVar
 import logging
 import random
 
-
-@dataclass
-class Azione:
-    nome: str
-    costo: int
-    guadagno: int = None
-    n_dadi: int = 0
+from scripts.azioni import azz_imm, azioni_cervello, azioni_dig, azioni_circol, Azione
 
 
 def setup_logger(
@@ -105,31 +98,18 @@ class Apparato(ABC):
 class Cuore(Apparato):
     COSTO_POTENZIAMENTO: ClassVar[int] = 4  # coerente con potenzia() sotto
 
-    AZIONI: ClassVar[list[Azione]] = [
-        Azione("soprav",   costo=0, guadagno=1),
-        Azione("Battenorma", costo=1, guadagno = 4),
-        Azione("Batteforte",         costo=2, guadagno = 6),
-    ]
+    AZIONI: ClassVar[list[Azione]] = azioni_circol
 
     def potenzia(self, costo: int = 3):
         super().potenzia(4)
 
 
 class Stomaco(Apparato):
-    AZIONI: ClassVar[list[Azione]] = [
-        Azione("Digestione intensa", costo=2, guadagno=4),
-        Azione("Digestione lenta",   costo=1, guadagno=3),
-        Azione("Riposo",             costo=0, guadagno=1),
-    ]
+    AZIONI: ClassVar[list[Azione]] = azioni_dig
 
 
 class Immunitario(Apparato):
-    AZIONI: ClassVar[list[Azione]] = [
-        Azione("Febbre",           costo=3, n_dadi=6),
-        Azione("Attacco2",         costo=2, n_dadi=2),
-        Azione("Attacco1",         costo=1, n_dadi=1),
-        Azione("Soprav",           costo=0, n_dadi=1),
-    ]
+    AZIONI: ClassVar[list[Azione]] = azz_imm
 
     def _on_azione(self, azione: Azione):
         p = min(0.5 + self.livello_potenziamento * 0.05, 0.7)
@@ -139,9 +119,4 @@ class Immunitario(Apparato):
 
 
 class Cervello(Apparato):
-    AZIONI: ClassVar[list[Azione]] = [
-        Azione("Corteccia", costo=3, guadagno = 6),
-        Azione("Talamo",    costo=2, guadagno = 4),
-        Azione("Talamo",    costo=1, guadagno = 2),
-        Azione("Riposo",    costo=0, guadagno=1),
-    ]
+    AZIONI: ClassVar[list[Azione]] = azioni_cervello
