@@ -28,9 +28,9 @@ def setup_logger(
     return logger
 
 
-
 class Apparato(ABC):
     AZIONI: ClassVar[list[Azione]] = []
+    COSTO_POTENZIAMENTO: ClassVar[int] = 3
 
     def __init__(self, apparato: Apparato | None = None):
 
@@ -38,13 +38,14 @@ class Apparato(ABC):
         self.logger = setup_logger(f"{self.nome}")
         self.livello_potenziamento: int = 0
         self.apparato_succ = apparato
+        self.in_pericolo: bool = False
 
     @property
     def nome(self) -> str:
         return str(self.__class__.__name__)
 
     def aumenta_potenziamento(self):
-        self.livello_potenziamento +=1
+        self.livello_potenziamento += 1
 
     def potenzia(self, costo: int = 3):
         if costo <= self.risorsa:
@@ -55,9 +56,29 @@ class Apparato(ABC):
         else:
             self.logger.warning(f"r={self.risorsa:<3}No potenziamento")
 
-    def turno(self):
+    def scegli_azione(self) -> Azione:
+        """
+        Decide quale azione compiere tra quelle disponibili, lasciando abbastanza risorse.
+        """
+
         disponibili = [a for a in self.AZIONI if a.costo <= self.apparato_succ.risorsa]
-        azione = random.choice(disponibili)
+
+        if self.in_pericolo:
+            return max(disponibili, key=lambda a: a.costo)
+
+        azioni_cooperative = [
+            a for a in disponibili
+            if self.apparato_succ.risorsa - a.costo >= self.apparato_succ.COSTO_POTENZIAMENTO
+        ]
+
+        if azioni_cooperative:
+            return max(azioni_cooperative, key=lambda a: a.costo)
+        else:
+            return random.choice(disponibili)
+
+    def turno(self):
+
+        azione = self.scegli_azione()
         self.apparato_succ.paga_x(azione.costo)
 
         old = self.risorsa
@@ -68,12 +89,11 @@ class Apparato(ABC):
         )
         self.apparato_succ.logger.info(f"r={self.apparato_succ.risorsa:<3}")
 
-
     def _on_azione(self, azione: Azione):
         self.risorsa += azione.guadagno
 
     def paga_x(self, x: int):
-        if x<=self.risorsa:
+        if x <= self.risorsa:
             self.risorsa -= x
         else:
             raise ValueError(f"{self.nome} non ha abbastanza risorsa per pagare {x}.")
@@ -83,6 +103,8 @@ class Apparato(ABC):
 
 
 class Cuore(Apparato):
+    COSTO_POTENZIAMENTO: ClassVar[int] = 4  # coerente con potenzia() sotto
+
     AZIONI: ClassVar[list[Azione]] = [
         Azione("soprav",   costo=0, guadagno=1),
         Azione("Battenorma", costo=1, guadagno = 4),
@@ -114,6 +136,7 @@ class Immunitario(Apparato):
         hits = sum(1 for _ in range(azione.n_dadi) if random.random() < p)
         self.risorsa += hits
         self.logger.info(f"  dado: {hits}/{azione.n_dadi} colpi (p={p:.0%})")
+
 
 class Cervello(Apparato):
     AZIONI: ClassVar[list[Azione]] = [
