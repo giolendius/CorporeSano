@@ -106,15 +106,15 @@ class Cuore(Apparato):
     def _on_azione(self, azione: AzioneCirc):
         movimenti = azione.movimenti
         while movimenti:
-            self.step_sangue[self.goccia_sangue_corrente]['cur'] += 1
+            step = self.step_sangue[self.goccia_sangue_corrente]
+            step['cur'] += 1
             movimenti -= 1
-            if self.step_sangue[self.goccia_sangue_corrente]['cur'] == self.step_sangue[self.goccia_sangue_corrente]['tot']:
-                self.step_sangue[self.goccia_sangue_corrente]['cur'] = 0
-                if self.step_sangue[self.goccia_sangue_corrente]['type'] == 'O2':
+            if (step['cur'] ==
+                    step['tot']):
+                step['cur'] = 0
+                if step['type'] == 'O2':
                     self.risorsa += 5
                 self.goccia_sangue_corrente = (self.goccia_sangue_corrente + 1) % len(self.step_sangue)
-
-
 
 
 class Stomaco(Apparato):

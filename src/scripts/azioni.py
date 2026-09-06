@@ -10,11 +10,16 @@ class Azione:
     guadagno: int = None
 
 
+@dataclass
+class AzioneNervoso(Azione):
+    guadagno: int
+
+
 azioni_cervello = [
-    Azione("Sonno", costo=0, guadagno=1),
-    Azione("Talamo", costo=1, guadagno=2),
-    Azione("IpoTalamo", costo=2, guadagno=4),
-    Azione("Corteccia", costo=3, guadagno=6),
+    AzioneNervoso("Sonno", costo=0, guadagno=1),
+    AzioneNervoso("Talamo", costo=1, guadagno=2),
+    AzioneNervoso("IpoTalamo", costo=2, guadagno=4),
+    AzioneNervoso("Corteccia", costo=3, guadagno=6),
 ]
 
 
@@ -31,10 +36,15 @@ azioni_imm = [
     ]
 
 
+@dataclass
+class AzioneDig(Azione):
+    guadagno: int
+
+
 azioni_dig = [
-        Azione("Assorb Min", costo=0, guadagno=1),
-        Azione("Assorb Nor", costo=1, guadagno=3),
-        Azione("Assorb Int", costo=2, guadagno=4),
+        AzioneDig("Assorb Min", costo=0, guadagno=1),
+        AzioneDig("Assorb Nor", costo=1, guadagno=3),
+        AzioneDig("Assorb Int", costo=2, guadagno=4),
     ]
 
 
