@@ -1,2 +1,9 @@
-.idea
-.vscode
+.idea\
+.vscode\
+
+node_modules\
+
+
+uv.lock
+modules
+node_modules

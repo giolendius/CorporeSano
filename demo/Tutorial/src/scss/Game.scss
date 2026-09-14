@@ -57,6 +57,13 @@
     }
 */
 
-
+#board {
+   width: 480px;
+   height: 480px;
+   border: 20px solid black;
+   background: black;
+   display: grid;
+   grid-template-columns: repeat(8, 1fr);
+}
 
 
