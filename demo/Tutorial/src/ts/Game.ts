@@ -41,8 +41,17 @@ export class Game {
 
         // Example to add a div on the game area
         this.bga.gameArea.getElement().insertAdjacentHTML('beforeend', `
-            <div id="board">ciaone! </div>
+            <div id="board"></div>
         `);
+
+        const board = document.getElementById('board');
+        const board_size = 8;
+        for (let x = 1; x <= board_size; x++) {
+            for (let y = 1; y <= board_size; y++) {
+                board.insertAdjacentHTML(`beforeend`, `<div id="square_${x}_${y}" data-x="${x}" data-y="${y}" class="square board"></div>`);
+                document.getElementById(`square_${x}_${y}`).addEventListener('click', e => this.onPlayDisc(x, y));
+            }        
+        }
         
         // Setting up player boards
         Object.entries(gamedatas.players).forEach(([pId, player]) => {
@@ -57,16 +66,15 @@ export class Game {
                 playerCounter: 'energy',
                 playerId: playerId,
             });
-
-            // example of adding a div for each player
-            //document.getElementById('player-tables').insertAdjacentHTML('beforeend', `
-            //    <div id="player-table-${player.id}">
-            //        <strong>${player.name}</strong>
-            //        <div>Player zone content goes here</div>
-            //    </div>
-            //`);
         });
-        
+
+        for( var i in gamedatas.board ) {
+            const square = gamedatas.board[i];
+            
+            if( square.player !== null ) {
+                this.addDiscOnBoard( square.x, square.y, square.player );
+            }
+        }
         // TODO: Set up your game interface here, according to "gamedatas"
         
 
@@ -79,12 +87,23 @@ export class Game {
     ///////////////////////////////////////////////////
     //// Utility methods
     
-    /*
-    
-        Here, you can defines some utility methods that you can use everywhere in your javascript
-        script. Typically, functions that are used in multiple state classes or outside a state class.
-    
-    */
+    async addDiscOnBoard( x: number, y: number, playerId: number, animate: boolean = true) {
+        const color = this.gamedatas.players[ playerId ].color;
+        const discId = `disc_${x}_${y}`;
+        document.getElementById(`square_${x}_${y}`).insertAdjacentHTML('beforeend', `
+                <div class="disc" data-color="${color}" id="${discId}">
+                    <div class="disc-faces">
+                        <div class="disc-face" data-side="white"></div>
+                        <div class="disc-face" data-side="black"></div>
+                    </div>
+                </div>
+            `);
+
+            if (animate) {
+                const element = document.getElementById(discId);
+                await this.animationManager.fadeIn(element, document.getElementById(`overall_player_board_${playerId}`));
+            }
+    };
 
     
     ///////////////////////////////////////////////////

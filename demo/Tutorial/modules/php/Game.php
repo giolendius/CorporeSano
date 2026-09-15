@@ -27,6 +27,8 @@ class Game extends \Bga\GameFramework\Table
 
     public PlayerCounter $playerEnergy;
 
+    public BoardManager $boardManager;
+
     /**
      * Your global variables labels:
      *
@@ -51,6 +53,8 @@ class Game extends \Bga\GameFramework\Table
             ],
             // ...
         ];
+
+        $this->boardManager = new BoardManager($this);
 
         /* example of notification decorator.
         // automatically complete notification args when needed
@@ -130,12 +134,11 @@ class Game extends \Bga\GameFramework\Table
         // Get information about players.
         // NOTE: you can retrieve some extra field you added for "player" table in `dbmodel.sql` if you need it.
         $result["players"] = $this->getCollectionFromDb(
-            "SELECT `player_id` AS `id`, `player_score` AS `score` FROM `player`"
+            "SELECT `player_id` AS `id`, `player_score` AS `score`, `player_color` AS `color` FROM `player`"
         );
         $this->playerEnergy->fillResult($result);
-
-        // TODO: Gather all information about current game situation (visible by player $currentPlayerId).
-
+        
+        $result["board"] = $this->boardManager->getOccupiedDiscs();
         return $result;
     }
 
@@ -150,7 +153,8 @@ class Game extends \Bga\GameFramework\Table
         // Set the colors of the players with HTML color code. The default below is red/green/blue/orange/brown. The
         // number of colors defined here must correspond to the maximum number of players allowed for the gams.
         $gameinfos = $this->getGameinfos();
-        $default_colors = $gameinfos['player_colors'];
+        // $default_colors = $gameinfos['player_colors'];
+        $default_colors = ["000000", "ffffff"];
 
         foreach ($players as $player_id => $player) {
             // Now you can access both $player_id and $player array
@@ -172,7 +176,7 @@ class Game extends \Bga\GameFramework\Table
             )
         );
 
-        $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
+        // $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
         $this->reloadPlayersBasicInfos();
 
         // Init global values with their initial values.
@@ -186,6 +190,9 @@ class Game extends \Bga\GameFramework\Table
         // $this->playerStats->init('player_teststat1', 0);
 
         // TODO: Setup the initial game situation here.
+        list( $blackplayer_id, $whiteplayer_id ) = array_keys( $players );
+        // Init the board
+        $this->boardManager->initializeBoard(8, (int) $blackplayer_id, (int) $whiteplayer_id);
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();

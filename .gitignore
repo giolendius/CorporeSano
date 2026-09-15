@@ -1,4 +1,7 @@
 .idea/
 
 *.cpython-312.pyc
-*/*.DS_Store
+uv.lock
+**.DS_Store
+
+*.env

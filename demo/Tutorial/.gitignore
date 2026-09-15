@@ -1,9 +1,9 @@
 .idea\
-.vscode\
 
-node_modules\
-
-
-uv.lock
 modules
 node_modules
+
+Tutorial/.vscode/
+.vscode
+/.vscode
+.vscode/
