@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace Bga\Games\tutorialgioele;
 
-use Bga\Games\tutorialgioele\States\PlayerTurn;
+use Bga\Games\tutorialgioele\States\PlayDisc;
 use Bga\GameFramework\Components\Counters\PlayerCounter;
 
 class Game extends \Bga\GameFramework\Table
@@ -197,7 +197,7 @@ class Game extends \Bga\GameFramework\Table
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
 
-        return PlayerTurn::class;
+        return PlayDisc::class;
     }
 
     /**

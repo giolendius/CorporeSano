@@ -3,8 +3,10 @@
  * onEnteringState, onLeavingState and onPlayerActivationChange are predefined names that will be called by the framework.
  * When executing code in this state, you can access the args using this.args
  */
-class PlayerTurn {
+class PlayDisc {
     constructor(game, bga) {
+        this.game = game;
+        this.bga = bga;
         this.game = game;
         this.bga = bga;
     }
@@ -13,13 +15,11 @@ class PlayerTurn {
      */
     onEnteringState(args, isCurrentPlayerActive) {
         this.bga.statusBar.setTitle(isCurrentPlayerActive ?
-            _('${you} must play a card or pass') :
-            _('${actplayer} must play a card or pass'));
+            _('${you} must play a dddisc') :
+            _('${actplayer} must play a dddisc'));
+        console.log('mosse possibili', args.possibleMoves);
         if (isCurrentPlayerActive) {
-            const playableCardsIds = args.playableCardsIds; // returned by the PlayerTurn::getArgs
-            // Add test action buttons in the action status bar, simulating a card click:
-            playableCardsIds.forEach(cardId => this.bga.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', `${cardId}`), () => this.onCardClick(cardId)));
-            this.bga.statusBar.addActionButton(_('Pass'), () => this.bga.actions.performAction("actPass"), { color: 'secondary' });
+            this.updatePossibleMoves(args.possibleMoves);
         }
     }
     /**
@@ -43,6 +43,17 @@ class PlayerTurn {
             // (most of the time, nothing, as the game will react to notifs / change of state instead, so you can delete the `then`)
         });
     }
+    updatePossibleMoves(possibleMoves) {
+        // Remove current possible moves
+        document.querySelectorAll('.selectable').forEach(div => div.classList.remove('selectable'));
+        for (let x in possibleMoves) {
+            for (let y in possibleMoves[x]) {
+                // x,y is a possible move
+                document.getElementById(`square_${x}_${y}`).classList.add('selectable');
+            }
+        }
+        this.bga.gameui.addTooltipToClass('selectable', '', _('Place a disc here'));
+    }
 }
 
 class Game {
@@ -50,8 +61,8 @@ class Game {
         console.log('tutorialgioele constructor');
         this.bga = bga;
         // Declare the State classes
-        this.playerTurn = new PlayerTurn(this, bga);
-        this.bga.states.register('PlayerTurn', this.playerTurn);
+        this.PlayDisc = new PlayDisc(this, bga);
+        this.bga.states.register('PlayDisc', this.PlayDisc);
         // Uncomment the next line to show debug informations about state changes in the console. Remove before going to production!
         // this.bga.states.logger = console.log;
         // Here, you can init the global variables of your user interface

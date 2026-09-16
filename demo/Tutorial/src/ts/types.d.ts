@@ -13,6 +13,7 @@ interface PlayerTurnArgs {
     playableCardsIds: number[];
 }
    
-/*
- * Describe here the types for your notif args
- */
+type PossibleMoves = {[x: number]: {[y: number]: boolean } };
+interface PlayDiscArgs {
+    possibleMoves: PossibleMoves;
+}

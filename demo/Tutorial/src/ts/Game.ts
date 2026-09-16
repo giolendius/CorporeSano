@@ -1,18 +1,18 @@
-import { PlayerTurn } from "./States/PlayerTurn";
+import { PlayDisc } from "./States/PlayDisc";
 
 export class Game {
     public bga: Bga<tutorialgioelePlayer, tutorialgioeleGamedatas>;
     private gamedatas: tutorialgioeleGamedatas;
 
-    private playerTurn: PlayerTurn;
+    private PlayDisc: PlayDisc;
 
     constructor(bga: Bga<tutorialgioelePlayer, tutorialgioeleGamedatas>) {
         console.log('tutorialgioele constructor');
         this.bga = bga;
 
         // Declare the State classes
-        this.playerTurn = new PlayerTurn(this, bga);
-        this.bga.states.register('PlayerTurn', this.playerTurn);
+        this.PlayDisc = new PlayDisc(this, bga);
+        this.bga.states.register('PlayDisc', this.PlayDisc);
 
         // Uncomment the next line to show debug informations about state changes in the console. Remove before going to production!
         // this.bga.states.logger = console.log;

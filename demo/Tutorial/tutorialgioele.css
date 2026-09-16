@@ -106,4 +106,9 @@
   transform: rotateY(180deg);
 }
 
+.square.selectable {
+  background-color: color-mix(in srgb, darkgreen, white 50%);
+  cursor: pointer;
+}
+
 /*# sourceMappingURL=tutorialgioele.css.map */
