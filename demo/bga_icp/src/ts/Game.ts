@@ -7,7 +7,7 @@ export class Game {
     private playerTurn: PlayerTurn;
 
     constructor(bga: Bga<InCorporeSanoPlayer, InCorporeSanoGamedatas>) {
-        console.log('incorporesano constructor');
+        console.log('incorporesano !constructor');
         this.bga = bga;
 
         // Declare the State classes
@@ -48,22 +48,18 @@ export class Game {
         // Setting up player boards
         Object.entries(gamedatas.players).forEach(([pId, player]) => {
             const playerId = Number(pId);
-            // example of setting up players boards
-            this.bga.playerPanels.getElement(playerId).insertAdjacentHTML('beforeend', `
-                <span id="energy-player-counter-${playerId}"></span> Energy
-            `);
-            const counter = new ebg.counter();
-            counter.create(`energy-player-counter-${playerId}`, {
-                value: player.energy,
-                playerCounter: 'energy',
-                playerId: playerId,
-            });
 
-            // example of adding a div for each player
+            // Show the player's body system and its resources in the panel.
+            this.bga.playerPanels.getElement(playerId).insertAdjacentHTML('beforeend', `
+                <div class="system-label">${player.system}</div>
+                <div id="resources-${playerId}" class="player-resources"></div>
+            `);
+            this.renderResources(playerId, player.resources ?? {});
+
+            // A per-player zone in the game area.
             document.getElementById('player-tables').insertAdjacentHTML('beforeend', `
                 <div id="player-table-${player.id}">
-                    <strong>${player.name}</strong>
-                    <div>Player zone content goes here</div>
+                    <strong>${player.name}</strong> — ${player.system}
                 </div>
             `);
         });
@@ -79,15 +75,17 @@ export class Game {
 
     ///////////////////////////////////////////////////
     //// Utility methods
-    
-    /*
-    
-        Here, you can defines some utility methods that you can use everywhere in your javascript
-        script. Typically, functions that are used in multiple state classes or outside a state class.
-    
-    */
 
-    
+    private renderResources(playerId: number, resources: Record<string, number> | undefined) {
+        const container = document.getElementById(`resources-${playerId}`);
+        if (!container || !resources) return;
+        container.innerHTML = Object.entries(resources)
+            .map(([key, amount]) =>
+                `<span class="resource">${key}: <span id="res-${playerId}-${key}">${amount}</span></span>`)
+            .join(' ');
+    }
+
+
     ///////////////////////////////////////////////////
     //// Reaction to cometD notifications
 
@@ -109,14 +107,9 @@ export class Game {
         });
     }
     
-    // TODO: from this point and below, you can write your game notifications handling methods
-    
-    /*
-    Example:
-    async notif_cardPlayed( args ) {
-        // Note: args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-        
-        // TODO: play the card in the user interface.
+    // Game notification handlers.
+
+    async notif_azione(args: AzioneNotifArgs) {
+        this.renderResources(args.player_id, args.resources);
     }
-    */
 }

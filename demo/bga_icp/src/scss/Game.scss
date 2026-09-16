@@ -38,6 +38,13 @@
 
 /********* You can start writing your SCSS below this line: **********/
 
+// Action buttons: disabled placeholder actions look greyed-out and non-interactive
+.action-button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 
 /*
     Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):

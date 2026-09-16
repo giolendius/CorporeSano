@@ -35,6 +35,12 @@
            Consequently, don't hesitate to put as many comments as necessary.
 */
 /********* You can start writing your SCSS below this line: **********/
+.action-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /*
     Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
 

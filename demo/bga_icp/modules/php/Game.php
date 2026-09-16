@@ -19,14 +19,10 @@ declare(strict_types=1);
 namespace Bga\Games\InCorporeSano;
 
 use Bga\Games\InCorporeSano\States\PlayerTurn;
-use Bga\GameFramework\Components\Counters\PlayerCounter;
+use Bga\Games\InCorporeSano\Systems\Apparato;
 
 class Game extends \Bga\GameFramework\Table
 {
-    public static array $CARD_TYPES;
-
-    public PlayerCounter $playerEnergy;
-
     /**
      * Your global variables labels:
      *
@@ -39,18 +35,6 @@ class Game extends \Bga\GameFramework\Table
     public function __construct()
     {
         parent::__construct();
-
-        $this->playerEnergy = $this->bga->counterFactory->createPlayerCounter('energy');
-
-        self::$CARD_TYPES = [
-            1 => [
-                "card_name" => clienttranslate('Troll'), // ...
-            ],
-            2 => [
-                "card_name" => clienttranslate('Goblin'), // ...
-            ],
-            // ...
-        ];
 
         /* example of notification decorator.
         // automatically complete notification args when needed
@@ -66,6 +50,49 @@ class Game extends \Bga\GameFramework\Table
             
             return $args;
         });*/
+    }
+
+    /** Read the body system key assigned to a player. */
+    public function getPlayerSystem(int $playerId): string
+    {
+        return (string) $this->getUniqueValueFromDB(
+            "SELECT `player_system` FROM `player` WHERE `player_id` = $playerId"
+        );
+    }
+
+    /** Read a single resource of a player (0 if the row does not exist). */
+    public function getPlayerResource(int $playerId, string $key): int
+    {
+        $amount = $this->getUniqueValueFromDB(
+            "SELECT `amount` FROM `player_resource` WHERE `player_id` = $playerId AND `resource_key` = '$key'"
+        );
+        return $amount === null ? 0 : (int) $amount;
+    }
+
+    /** Read all resources of a player as a key => amount map. */
+    public function getPlayerResources(int $playerId): array
+    {
+        return array_map('intval', $this->getCollectionFromDb(
+            "SELECT `resource_key`, `amount` FROM `player_resource` WHERE `player_id` = $playerId",
+            true
+        ));
+    }
+
+    /** Set (upsert) a resource of a player to an absolute amount. */
+    public function setPlayerResource(int $playerId, string $key, int $amount): void
+    {
+        static::DbQuery(
+            "INSERT INTO `player_resource` (`player_id`, `resource_key`, `amount`) VALUES ($playerId, '$key', $amount)
+             ON DUPLICATE KEY UPDATE `amount` = $amount"
+        );
+    }
+
+    /** Increment a resource of a player by $delta and return the new amount. */
+    public function incPlayerResource(int $playerId, string $key, int $delta): int
+    {
+        $new = $this->getPlayerResource($playerId, $key) + $delta;
+        $this->setPlayerResource($playerId, $key, $new);
+        return $new;
     }
 
     /**
@@ -130,11 +157,14 @@ class Game extends \Bga\GameFramework\Table
         // Get information about players.
         // NOTE: you can retrieve some extra field you added for "player" table in `dbmodel.sql` if you need it.
         $result["players"] = $this->getCollectionFromDb(
-            "SELECT `player_id` AS `id`, `player_score` AS `score` FROM `player`"
+            "SELECT `player_id` AS `id`, `player_score` AS `score`, `player_system` AS `system` FROM `player`"
         );
-        $this->playerEnergy->fillResult($result);
 
-        // TODO: Gather all information about current game situation (visible by player $currentPlayerId).
+        // Attach each player's resources as a key => amount map.
+        foreach ($result["players"] as $playerId => &$player) {
+            $player["resources"] = $this->getPlayerResources((int) $playerId);
+        }
+        unset($player);
 
         return $result;
     }
@@ -145,35 +175,47 @@ class Game extends \Bga\GameFramework\Table
      */
     protected function setupNewGame($players, $options = [])
     {
-        $this->playerEnergy->initDb(array_keys($players), initialValue: 2);
-
         // Set the colors of the players with HTML color code. The default below is red/green/blue/orange/brown. The
         // number of colors defined here must correspond to the maximum number of players allowed for the gams.
         $gameinfos = $this->getGameinfos();
         $default_colors = $gameinfos['player_colors'];
 
+        // Assign a body system to each player based on seating order: the players are iterated in table
+        // order, so seat 1 -> circulatory, seat 2 -> digestive, seat 3 -> immune, seat 4 -> nervous.
+        $orderedKeys = Apparato::orderedKeys();
+        $systemByPlayerId = [];
+        $seat = 0;
+
         foreach ($players as $player_id => $player) {
-            // Now you can access both $player_id and $player array
-            $query_values[] = vsprintf("(%s, '%s', '%s')", [
+            $systemKey = $orderedKeys[$seat % count($orderedKeys)];
+            $systemByPlayerId[$player_id] = $systemKey;
+            $query_values[] = vsprintf("(%s, '%s', '%s', '%s')", [
                 $player_id,
                 array_shift($default_colors),
                 addslashes($player["player_name"]),
+                $systemKey,
             ]);
+            $seat++;
         }
 
         // Create players based on generic information.
-        //
-        // NOTE: You can add extra field on player table in the database (see dbmodel.sql) and initialize
-        // additional fields directly here.
         static::DbQuery(
             sprintf(
-                "INSERT INTO `player` (`player_id`, `player_color`, `player_name`) VALUES %s",
+                "INSERT INTO `player` (`player_id`, `player_color`, `player_name`, `player_system`) VALUES %s",
                 implode(",", $query_values)
             )
         );
 
         $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
         $this->reloadPlayersBasicInfos();
+
+        // Seed each player's starting resources, as declared by their body system.
+        foreach ($systemByPlayerId as $player_id => $systemKey) {
+            $system = Apparato::create($this, (int) $player_id, $systemKey);
+            foreach ($system->getInitialResources() as $key => $amount) {
+                $this->setPlayerResource((int) $player_id, $key, $amount);
+            }
+        }
 
         // Init global values with their initial values.
 

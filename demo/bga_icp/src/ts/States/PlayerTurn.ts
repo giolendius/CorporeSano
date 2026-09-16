@@ -6,27 +6,37 @@ import { Game } from "../Game";
  * When executing code in this state, you can access the args using this.args
  */
 export class PlayerTurn {
-    constructor(private game: Game, private bga: Bga<EmptyGamePlayer, EmptyGameGamedatas>) {
+    constructor(private game: Game, private bga: Bga<InCorporeSanoPlayer, InCorporeSanoGamedatas>) {
     }
 
     /**
      * This method is called each time we are entering the game state. You can use this method to perform some user interface changes at this moment.
      */
     onEnteringState(args: PlayerTurnArgs, isCurrentPlayerActive: boolean) {
-        this.bga.statusBar.setTitle(isCurrentPlayerActive ? 
-            _('${you} must play a card or pass') :
-            _('${actplayer} must play a card or pass')
+        this.bga.statusBar.setTitle(isCurrentPlayerActive ?
+            _('${you} must use your action') :
+            _('${actplayer} must use their action')
         );
-      
+
         if (isCurrentPlayerActive) {
-            const playableCardsIds = args.playableCardsIds; // returned by the PlayerTurn::getArgs
+            // Azione 0: unica azione disponibile ora (+1 alla propria risorsa)
+            this.bga.statusBar.addActionButton(
+                _('Azione 0 — ${system}').replace('${system}', args.system),
+                () => this.onActionClick(),
+                { id: 'btn-azione-0' }
+            );
 
-            // Add test action buttons in the action status bar, simulating a card click:
-            playableCardsIds.forEach(
-                cardId => this.bga.statusBar.addActionButton(_('Play card with id ${card_id}').replace('${card_id}', `${cardId}`), () => this.onCardClick(cardId))
-            ); 
-
-            this.bga.statusBar.addActionButton(_('Pass'), () => this.bga.actions.performAction("actPass"), { color: 'secondary' }); 
+            // Azioni 1 e 2: placeholder disabilitate (da implementare in futuro)
+            this.bga.statusBar.addActionButton(
+                _('Azione 1'),
+                () => {},
+                { id: 'btn-azione-1', color: 'secondary', classes: 'disabled' }
+            );
+            this.bga.statusBar.addActionButton(
+                _('Azione 2'),
+                () => {},
+                { id: 'btn-azione-2', color: 'secondary', classes: 'disabled' }
+            );
         }
     }
 
@@ -45,14 +55,7 @@ export class PlayerTurn {
     }
 
     
-    onCardClick(card_id: number) {
-        console.log( 'onCardClick', card_id );
-
-        this.bga.actions.performAction("actPlayCard", { 
-            card_id,
-        }).then(() =>  {                
-            // What to do after the server call if it succeeded
-            // (most of the time, nothing, as the game will react to notifs / change of state instead, so you can delete the `then`)
-        });        
+    onActionClick() {
+        this.bga.actions.performAction("actAzione");
     }
 }
