@@ -38,11 +38,151 @@
 
 /********* You can start writing your SCSS below this line: **********/
 
-// Action buttons: disabled placeholder actions look greyed-out and non-interactive
-.action-button.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
+// ── Layout ───────────────────────────────────────────────────────────────────
+
+#ics-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+#game-content {
+    flex: 1;
+}
+
+// ── Player board  ───────────────────────────────
+
+#player-board {
+    width: 300px;
+    height: 200px;
+    flex-shrink: 0;
+    display: flex;
+    border: 2px solid #555;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e1e1e;
+}
+
+.pb-left {
+    width: 100px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #444;
+    padding: 6px;
+    text-align: center;
+}
+
+.pb-system-name {
+    font-weight: bold;
+    font-size: 0.8em;
+    color: #eee;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    word-break: break-word;
+}
+
+.pb-right {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+// Upgrade buttons: horizontal row, always visible
+.pb-upgrade-row {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    padding: 6px;
+    border-bottom: 1px solid #444;
+    flex-shrink: 0;
+}
+
+.pb-btn {
+    flex: 1;
+    font-size: 0.58em !important;
+    padding: 4px 2px !important;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+
+    &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        filter: grayscale(60%);
+    }
+}
+
+// Actions list: fills remaining height, scrollable
+.pb-actions-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.pb-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    font-size: 0.7em;
+    color: #ccc;
+    border-bottom: 1px solid #2d2d2d;
+    cursor: default;
+    gap: 6px;
+
+    &:last-child { border-bottom: none; }
+
+    &.pb-action--locked    { opacity: 0.35; }
+    &.pb-action--unavailable { opacity: 0.22; }
+
+    &.pb-action--available {
+        cursor: pointer;
+        opacity: 1;
+        color: #fff;
+        &:hover { background: #3a3a3a; }
+    }
+}
+
+.pb-action-name { flex: 1; }
+.pb-action-cost { color: #888; font-size: 0.85em; white-space: nowrap; }
+
+// ── Game board (right, big colored rectangle) ─────────────────────────────────
+
+#game-board {
+    flex: 1;
+    min-height: 400px;
+    background: linear-gradient(135deg, #1a4a6b 0%, #2d6a4f 50%, #7b2d00 100%);
+    border-radius: 12px;
+    padding: 16px;
+    color: #fff;
+}
+
+// ── Player panels ─────────────────────────────────────────────────────────────
+
+.system-label {
+    font-weight: bold;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.player-resources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.resource {
+    font-size: 0.8em;
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 

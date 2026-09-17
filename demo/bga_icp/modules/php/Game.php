@@ -20,6 +20,7 @@ namespace Bga\Games\InCorporeSano;
 
 use Bga\Games\InCorporeSano\States\PlayerTurn;
 use Bga\Games\InCorporeSano\Systems\Apparato;
+use Bga\Games\InCorporeSano\Systems\BodySystem;
 
 class Game extends \Bga\GameFramework\Table
 {
@@ -52,12 +53,36 @@ class Game extends \Bga\GameFramework\Table
         });*/
     }
 
-    /** Read the body system key assigned to a player. */
-    public function getPlayerSystem(int $playerId): string
+    /** Read the body system assigned to a player as a typed enum (null if not yet assigned). */
+    public function getPlayerSystem(int $playerId): ?BodySystem
     {
-        return (string) $this->getUniqueValueFromDB(
+        $value = $this->getUniqueValueFromDB(
             "SELECT `player_system` FROM `player` WHERE `player_id` = $playerId"
         );
+        return BodySystem::tryFrom((string) $value);
+    }
+
+    /** Find which player embodies a given body system. */
+    public function getPlayerBySystem(BodySystem $system): int
+    {
+        return (int) $this->getUniqueValueFromDB(
+            "SELECT `player_id` FROM `player` WHERE `player_system` = '{$system->value}'"
+        );
+    }
+
+    /**
+     * Deduct $amount from a player's resources (spreads across resource keys if needed).
+     * Used when a system pays the cost of an action from its successor's pool.
+     */
+    public function deductPlayerResourcesTotal(int $playerId, int $amount): void
+    {
+        $resources = $this->getPlayerResources($playerId);
+        foreach ($resources as $key => $value) {
+            if ($amount <= 0) break;
+            $deduct = min($value, $amount);
+            $this->setPlayerResource($playerId, $key, $value - $deduct);
+            $amount -= $deduct;
+        }
     }
 
     /** Read a single resource of a player (0 if the row does not exist). */
@@ -175,44 +200,39 @@ class Game extends \Bga\GameFramework\Table
      */
     protected function setupNewGame($players, $options = [])
     {
-        // Set the colors of the players with HTML color code. The default below is red/green/blue/orange/brown. The
-        // number of colors defined here must correspond to the maximum number of players allowed for the gams.
-        $gameinfos = $this->getGameinfos();
-        $default_colors = $gameinfos['player_colors'];
-
-        // Assign a body system to each player based on seating order: the players are iterated in table
-        // order, so seat 1 -> circulatory, seat 2 -> digestive, seat 3 -> immune, seat 4 -> nervous.
-        $orderedKeys = Apparato::orderedKeys();
+        // Assign each player a body system by seating order (seat 1 = Circulatory, ..., seat 4 = Nervous).
+        // Colors are fixed per system and cannot be changed by player preference.
+        $orderedSystems = BodySystem::orderedCases();
         $systemByPlayerId = [];
+        $query_values = [];
         $seat = 0;
 
+        // Sort by seat number so posto 1 → Circolatorio, posto 2 → Digerente, etc.
+        uasort($players, fn($a, $b) => $a['player_no'] <=> $b['player_no']);
+
         foreach ($players as $player_id => $player) {
-            $systemKey = $orderedKeys[$seat % count($orderedKeys)];
-            $systemByPlayerId[$player_id] = $systemKey;
+            $system = $orderedSystems[$seat % count($orderedSystems)];
+            $systemByPlayerId[$player_id] = $system;
             $query_values[] = vsprintf("(%s, '%s', '%s', '%s')", [
                 $player_id,
-                array_shift($default_colors),
+                $system->color(),
                 addslashes($player["player_name"]),
-                $systemKey,
+                $system->value,
             ]);
             $seat++;
         }
 
-        // Create players based on generic information.
-        static::DbQuery(
-            sprintf(
-                "INSERT INTO `player` (`player_id`, `player_color`, `player_name`, `player_system`) VALUES %s",
-                implode(",", $query_values)
-            )
-        );
+        static::DbQuery(sprintf(
+            "INSERT INTO `player` (`player_id`, `player_color`, `player_name`, `player_system`) VALUES %s",
+            implode(",", $query_values)
+        ));
 
-        $this->reattributeColorsBasedOnPreferences($players, $gameinfos["player_colors"]);
         $this->reloadPlayersBasicInfos();
 
-        // Seed each player's starting resources, as declared by their body system.
-        foreach ($systemByPlayerId as $player_id => $systemKey) {
-            $system = Apparato::create($this, (int) $player_id, $systemKey);
-            foreach ($system->getInitialResources() as $key => $amount) {
+        // Seed each player's starting resources from their system's declaration.
+        foreach ($systemByPlayerId as $player_id => $system) {
+            $apparato = Apparato::create($this, (int) $player_id, $system);
+            foreach ($apparato->getInitialResources() as $key => $amount) {
                 $this->setPlayerResource((int) $player_id, $key, $amount);
             }
         }

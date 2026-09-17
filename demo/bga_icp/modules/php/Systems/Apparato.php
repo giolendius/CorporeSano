@@ -9,9 +9,8 @@ use Bga\Games\InCorporeSano\Game;
 /**
  * Base class for a body system (apparato) embodied by a player.
  *
- * Each subclass declares its own starting resources and may override its action.
- * This is where the asymmetry between systems lives: adding a system means adding
- * a subclass, with no change to the database schema.
+ * Subclasses declare their own resources, actions, and action effects.
+ * All asymmetry lives here: schema never changes, only subclasses grow.
  */
 abstract class Apparato
 {
@@ -21,45 +20,53 @@ abstract class Apparato
     ) {
     }
 
-    /** Stable key stored in the `player_system` column and sent to the client. */
-    abstract public function getSystemKey(): string;
+    /** The BodySystem enum case this subclass represents. */
+    abstract public function getSystem(): BodySystem;
 
-    /** Human-readable name shown in the UI. */
+    /** Human-readable label shown in the UI. */
     abstract public function getLabel(): string;
 
     /**
-     * Resources this system starts the game with, as key => amount.
-     * Override to give a system more (or differently named) resources.
+     * Resources this system starts the game with: key => amount.
+     * Override in each subclass — systems are intentionally asymmetric.
      */
-    public function getInitialResources(): array
+    abstract public function getInitialResources(): array;
+
+    /**
+     * The three actions available to this system (placeholder costs, overridden per system later).
+     * Each entry: ['id' => int, 'label' => string, 'cost' => int]
+     * 'cost' is the amount taken from the SUCCESSOR system's resources.
+     */
+    public function getActions(): array
     {
-        return ['risorsa' => 3];
+        return [
+            ['id' => 0, 'label' => clienttranslate('Azione 0'), 'cost' => 0],
+            ['id' => 1, 'label' => clienttranslate('Azione 1'), 'cost' => 1],
+            ['id' => 2, 'label' => clienttranslate('Azione 2'), 'cost' => 2],
+        ];
     }
 
     /**
-     * The single action available for now: gain 1 of the system's own resource.
-     * Override to give a system a different behaviour.
+     * Execute the chosen action. Override per system for real effects.
+     * Base: action 0 → +1 to first own resource; actions 1/2 are no-ops for now.
      */
-    public function azione(): void
+    public function azione(int $actionId): void
     {
-        $this->game->incPlayerResource($this->playerId, 'risorsa', 1);
+        if ($actionId === 0) {
+            $resources = $this->game->getPlayerResources($this->playerId);
+            $primaryKey = (string) array_key_first($resources);
+            $this->game->incPlayerResource($this->playerId, $primaryKey, 1);
+        }
     }
 
-    /** System keys in seating order: seat 1 -> circulatory, ... seat 4 -> nervous. */
-    public static function orderedKeys(): array
+    /** Factory: build the concrete Apparato for a player given their BodySystem. */
+    public static function create(Game $game, int $playerId, BodySystem $system): Apparato
     {
-        return ['circulatory', 'digestive', 'immune', 'nervous'];
-    }
-
-    /** Build the concrete system for a player from its stored key. */
-    public static function create(Game $game, int $playerId, string $systemKey): Apparato
-    {
-        return match ($systemKey) {
-            'circulatory' => new Circolatorio($game, $playerId),
-            'digestive' => new Digerente($game, $playerId),
-            'immune' => new Immunitario($game, $playerId),
-            'nervous' => new Nervoso($game, $playerId),
-            default => throw new \InvalidArgumentException("Unknown system key: $systemKey"),
+        return match($system) {
+            BodySystem::Circulatory => new Circolatorio($game, $playerId),
+            BodySystem::Digestive   => new Digerente($game, $playerId),
+            BodySystem::Immune      => new Immunitario($game, $playerId),
+            BodySystem::Nervous     => new Nervoso($game, $playerId),
         };
     }
 }

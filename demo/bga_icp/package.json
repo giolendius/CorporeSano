@@ -5,9 +5,9 @@
    "main": "modules/js/Game.js",
    "scripts": {
      "build:ts": "rollup -c",
-     "build:scss": "sass --no-source-map src/scss/Game.scss incorporesano.css",
+     "build:scss": "sass --no-source-map src/scss/Game.scss modules/css/incorporesano.css",
      "watch:ts": "rollup -c -w",
-     "watch:scss": "sass --watch src/scss/Game.scss incorporesano.css",
+     "watch:scss": "sass --watch src/scss/Game.scss modules/css/incorporesano.css",
      "watch": "npm run watch:ts & npm run watch:scss",
      "build": "npm run build:ts && npm run build:scss"
    },

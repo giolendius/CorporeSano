@@ -6,13 +6,27 @@ namespace Bga\Games\InCorporeSano\Systems;
 
 class Digerente extends Apparato
 {
-    public function getSystemKey(): string
+    public function getSystem(): BodySystem { return BodySystem::Digestive; }
+    public function getLabel(): string { return clienttranslate('Digerente'); }
+
+    /** Starts with 1 proteina, 1 grasso, 1 fibra (rules: "Dare 1 proteina, 1 grasso e 1 fibra"). */
+    public function getInitialResources(): array
     {
-        return 'digestive';
+        return ['proteina' => 1, 'grasso' => 1, 'fibra' => 1];
     }
 
-    public function getLabel(): string
+    public function getActions(): array
     {
-        return clienttranslate('Digestive');
+        return [
+            ['id' => 0, 'label' => clienttranslate('Assorbi (base)'),  'cost' => 0],
+            ['id' => 1, 'label' => clienttranslate('Assorbi (medio)'), 'cost' => 1],
+            ['id' => 2, 'label' => clienttranslate('Assorbi (forte)'), 'cost' => 2],
+        ];
+    }
+
+    public function azione(int $actionId): void
+    {
+        // Placeholder: action 0 gains +1 proteina
+        $this->game->incPlayerResource($this->playerId, 'proteina', 1);
     }
 }

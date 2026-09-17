@@ -5,7 +5,7 @@
     output: {
       file: 'modules/js/Game.js',
       format: 'es',
-      sourcemap: false,
+      sourcemap: true,
       inlineDynamicImports: true,
     },
     plugins: [

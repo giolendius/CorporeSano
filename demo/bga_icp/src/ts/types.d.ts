@@ -1,24 +1,29 @@
 interface InCorporeSanoPlayer extends Player {
-    system: string; // body system key: circulatory | digestive | immune | nervous
-    resources: Record<string, number>; // resource_key => amount
+    system: string;                       // BodySystem raw value (circulatory | digestive | immune | nervous)
+    resources: Record<string, number>;    // resource_key => amount
 }
 
 interface InCorporeSanoGamedatas extends Gamedatas<InCorporeSanoPlayer> {
-    // Add here variables you set up in getAllDatas
+    // variables added in getAllDatas go here
 }
 
-/*
- * Describe here the types for your state args
- */
+interface GameAction {
+    id: number;
+    label: string;
+    cost: number;       // amount taken from successor's resources
+    available: boolean; // true if successor has enough
+}
+
 interface PlayerTurnArgs {
     system: string;
+    successorSystem: string;
+    successorResources: number; // total successor resources (summed)
+    actions: GameAction[];
 }
 
-/*
- * Describe here the types for your notif args
- */
 interface AzioneNotifArgs {
     player_id: number;
     player_name: string;
+    action_label: string;
     resources: Record<string, number>;
 }

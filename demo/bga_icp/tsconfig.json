@@ -5,7 +5,7 @@
       "moduleResolution": "bundler",
       "strict": false,
       "lib": ["dom", "esnext"],
-      "sourceMap": false,
+      "sourceMap": true,
       "rootDir": "."
     },
     "include": [
