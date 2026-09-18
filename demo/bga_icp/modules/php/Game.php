@@ -18,9 +18,9 @@ declare(strict_types=1);
 
 namespace Bga\Games\InCorporeSano;
 
-use Bga\Games\InCorporeSano\States\PlayerTurn;
 use Bga\Games\InCorporeSano\Systems\Apparato;
 use Bga\Games\InCorporeSano\Systems\BodySystem;
+use Bga\Games\InCorporeSano\Systems\CirBoard;
 
 class Game extends \Bga\GameFramework\Table
 {
@@ -207,8 +207,13 @@ class Game extends \Bga\GameFramework\Table
         $query_values = [];
         $seat = 0;
 
-        // Sort by seat number so posto 1 → Circolatorio, posto 2 → Digerente, etc.
-        uasort($players, fn($a, $b) => $a['player_no'] <=> $b['player_no']);
+        // Sort by seat: try player_no (classic framework), then player_table_order, else keep BGA order.
+        $firstPlayer = reset($players);
+        if (array_key_exists('player_no', $firstPlayer)) {
+            uasort($players, fn($a, $b) => $a['player_no'] <=> $b['player_no']);
+        } elseif (array_key_exists('player_table_order', $firstPlayer)) {
+            uasort($players, fn($a, $b) => $a['player_table_order'] <=> $b['player_table_order']);
+        }
 
         foreach ($players as $player_id => $player) {
             $system = $orderedSystems[$seat % count($orderedSystems)];
@@ -229,11 +234,14 @@ class Game extends \Bga\GameFramework\Table
 
         $this->reloadPlayersBasicInfos();
 
-        // Seed each player's starting resources from their system's declaration.
+        // Seed each player's starting resources and system-specific state.
         foreach ($systemByPlayerId as $player_id => $system) {
             $apparato = Apparato::create($this, (int) $player_id, $system);
             foreach ($apparato->getInitialResources() as $key => $amount) {
                 $this->setPlayerResource((int) $player_id, $key, $amount);
+            }
+            if ($system === BodySystem::Circulatory) {
+                CirBoard::saveBoats($this, (int) $player_id, CirBoard::initialBoats());
             }
         }
 
@@ -252,7 +260,10 @@ class Game extends \Bga\GameFramework\Table
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
 
-        return PlayerTurn::class;
+        // Route to the first player's system-specific turn state.
+        return AbstractPlayerTurn::stateFor(
+            $this->getPlayerSystem((int) $this->getActivePlayerId())
+        );
     }
 
     /**

@@ -48,15 +48,17 @@ abstract class Apparato
 
     /**
      * Execute the chosen action. Override per system for real effects.
+     * Returns an array of extra data the caller may need (e.g. movement params for Circolatorio).
      * Base: action 0 → +1 to first own resource; actions 1/2 are no-ops for now.
      */
-    public function azione(int $actionId): void
+    public function azione(int $actionId): array
     {
         if ($actionId === 0) {
             $resources = $this->game->getPlayerResources($this->playerId);
             $primaryKey = (string) array_key_first($resources);
             $this->game->incPlayerResource($this->playerId, $primaryKey, 1);
         }
+        return [];
     }
 
     /** Factory: build the concrete Apparato for a player given their BodySystem. */

@@ -4,13 +4,17 @@ export class Game {
     public bga: Bga<InCorporeSanoPlayer, InCorporeSanoGamedatas>;
     public gamedatas: InCorporeSanoGamedatas;
     public mySystem: string = '';
-    private playerTurn: PlayerTurn;
+    public playerTurn: PlayerTurn;
 
     constructor(bga: Bga<InCorporeSanoPlayer, InCorporeSanoGamedatas>) {
         console.log('incorporesano !constructor');
         this.bga = bga;
         this.playerTurn = new PlayerTurn(this, bga);
-        this.bga.states.register('PlayerTurn', this.playerTurn);
+        // One shared turn renderer, registered under each apparato's turn-state name
+        // (the UI is identical for all systems; Circolatorio's movement is driven by
+        // notifications, not by the state name).
+        (['CircolatorioTurn', 'DigerenteTurn', 'ImmunitarioTurn', 'NervosoTurn'] as const)
+            .forEach(name => this.bga.states.register(name, this.playerTurn));
     }
 
     setup(gamedatas: InCorporeSanoGamedatas) {
@@ -30,9 +34,9 @@ export class Game {
         `);
 
         // Identify this viewer's own system from gamedatas.
-        Object.entries(gamedatas.players).forEach(([, player]) => {
-            if ((player as any).is_you) this.mySystem = player.system;
-        });
+        const myId = this.bga.players.getCurrentPlayerId();
+        const me = gamedatas.players[myId];
+        if (me) this.mySystem = me.system;
         console.log('[Game] mySystem=', this.mySystem);
 
         // Player panels: show system label + all resources.
@@ -76,5 +80,16 @@ export class Game {
 
     async notif_azione(args: AzioneNotifArgs) {
         this.renderResources(args.player_id, args.resources);
+        this.renderResources(args.successor_player_id, args.successor_resources);
+    }
+
+    async notif_cir_start_movement(args: CirStartMovementNotif) {
+        this.renderResources(args.successor_player_id, args.successor_resources);
+        const isMe = args.player_id === this.bga.players.getCurrentPlayerId();
+        this.playerTurn.onCirStartMovement(args, isMe);
+    }
+
+    async notif_cir_boats_updated(args: CirBoatsUpdatedNotif) {
+        this.playerTurn.onCirBoatsUpdated(args.boats);
     }
 }

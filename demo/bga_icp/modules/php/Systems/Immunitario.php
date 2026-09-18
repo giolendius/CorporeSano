@@ -24,9 +24,9 @@ class Immunitario extends Apparato
         ];
     }
 
-    public function azione(int $actionId): void
+    public function azione(int $actionId): array
     {
-        // Placeholder: action 0 gains +1 virus_triangolare
         $this->game->incPlayerResource($this->playerId, 'virus_triangolare', 1);
+        return [];
     }
 }

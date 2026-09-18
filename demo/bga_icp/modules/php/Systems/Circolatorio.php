@@ -9,7 +9,6 @@ class Circolatorio extends Apparato
     public function getSystem(): BodySystem { return BodySystem::Circulatory; }
     public function getLabel(): string { return clienttranslate('Circolatorio'); }
 
-    /** Starts with 2 O2 (rules: "Dare 2 O2 all'apparato circolatorio"). */
     public function getInitialResources(): array
     {
         return ['o2' => 2];
@@ -17,16 +16,28 @@ class Circolatorio extends Apparato
 
     public function getActions(): array
     {
-        return [
-            ['id' => 0, 'label' => clienttranslate('Muovi sangue (base)'),  'cost' => 0],
-            ['id' => 1, 'label' => clienttranslate('Muovi sangue (medio)'), 'cost' => 1],
-            ['id' => 2, 'label' => clienttranslate('Muovi sangue (forte)'), 'cost' => 2],
-        ];
+        return array_map(
+            fn($a) => [
+                'id'        => $a['id'],
+                'label'     => clienttranslate($a['label']),
+                'cost'      => $a['cost'],
+                'movements' => $a['movements'],
+                'target'    => $a['target'],
+            ],
+            CirBoard::ACTIONS
+        );
     }
 
-    public function azione(int $actionId): void
+    /**
+     * Returns action parameters so PlayerTurn can send the movement notification.
+     * Does NOT write to DB — boats are saved only when actConfirmMovimento is called.
+     */
+    public function azione(int $actionId): array
     {
-        // Placeholder: all actions gain +1 O2 for now
-        $this->game->incPlayerResource($this->playerId, 'o2', 1);
+        $action = current(array_filter(CirBoard::ACTIONS, fn($a) => $a['id'] === $actionId));
+        return [
+            'movements' => $action['movements'],
+            'target'    => $action['target'],
+        ];
     }
 }

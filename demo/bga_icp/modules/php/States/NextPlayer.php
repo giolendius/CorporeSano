@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bga\Games\InCorporeSano\States;
 
 use Bga\GameFramework\StateType;
+use Bga\Games\InCorporeSano\AbstractPlayerTurn;
 use Bga\Games\InCorporeSano\Game;
 
 class NextPlayer extends \Bga\GameFramework\States\GameState
@@ -29,15 +30,15 @@ class NextPlayer extends \Bga\GameFramework\States\GameState
 
         // Give some extra time to the active player when he completed an action
         $this->game->giveExtraTime($activePlayerId);
-        
-        $this->game->activeNextPlayer();
 
-        // Go to another gamestate
+        // Advance the natural play order and route to the new active player's turn state.
+        $nextPlayerId = $this->game->activeNextPlayer();
+
         $gameEnd = false; // Here, we would detect if the game is over to make the appropriate transition
         if ($gameEnd) {
             return EndScore::class;
-        } else {
-            return PlayerTurn::class;
         }
+
+        return AbstractPlayerTurn::stateFor($this->game->getPlayerSystem((int) $nextPlayerId));
     }
 }

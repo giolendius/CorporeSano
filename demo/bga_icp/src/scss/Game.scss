@@ -155,11 +155,73 @@
 
 #game-board {
     flex: 1;
-    min-height: 400px;
+    aspect-ratio: 297 / 210; // A4 landscape
     background: linear-gradient(135deg, #1a4a6b 0%, #2d6a4f 50%, #7b2d00 100%);
     border-radius: 12px;
     padding: 16px;
     color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+// ── Circolatorio SVG board ────────────────────────────────────────────────────
+
+.cir-edge {
+    stroke: #999;
+    stroke-width: 2;
+    fill: none;
+}
+.cir-arrow-head {
+    fill: #999;
+}
+.cir-edge--side {
+    stroke: #555;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+    fill: none;
+}
+
+.cir-node {
+    fill: #2a2a3a;
+    stroke: #888;
+    stroke-width: 1.5;
+    transition: fill 0.15s;
+    cursor: pointer;
+    &:hover { fill: #3a3a5a; }
+    &--heart { fill: #7b1010; stroke: #e04040; stroke-width: 2; }
+    &--named { fill: #1a3a3a; stroke: #40aaaa; }
+    &--side  { fill: #1a1a2a; stroke: #555; cursor: default; }
+    &--reachable { fill: #2a5a2a; stroke: #44ee44; stroke-width: 2.5; }
+}
+
+.cir-boat {
+    fill: #cc2222;
+    stroke: #fff;
+    stroke-width: 1.5;
+    &--selected { fill: #ff6666; stroke: #ffdd00; stroke-width: 2.5; }
+}
+.cir-boat-label {
+    font-size: 8px;
+    fill: #fff;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.cir-label        { font-size: 14px; fill: #fff; font-weight: bold; pointer-events: none; }
+.cir-label--small { font-size: 8px;  fill: #aaa; pointer-events: none; }
+.cir-label--side  { font-size: 7px;  fill: #888; pointer-events: none; }
+
+.cir-passi-counter {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0,0,0,0.7);
+    color: #ffdd00;
+    font-size: 1em;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 6px;
+    pointer-events: none;
 }
 
 // ── Player panels ─────────────────────────────────────────────────────────────
@@ -180,7 +242,7 @@
 
 .resource {
     font-size: 0.8em;
-    background: #333;
+    background: #eda2a2;
     padding: 2px 6px;
     border-radius: 4px;
 }

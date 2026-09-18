@@ -24,9 +24,9 @@ class Nervoso extends Apparato
         ];
     }
 
-    public function azione(int $actionId): void
+    public function azione(int $actionId): array
     {
-        // Placeholder: action 0 gains +1 neurotrasmettitori
         $this->game->incPlayerResource($this->playerId, 'neurotrasmettitori', 1);
+        return [];
     }
 }

@@ -24,9 +24,9 @@ class Digerente extends Apparato
         ];
     }
 
-    public function azione(int $actionId): void
+    public function azione(int $actionId): array
     {
-        // Placeholder: action 0 gains +1 proteina
         $this->game->incPlayerResource($this->playerId, 'proteina', 1);
+        return [];
     }
 }
