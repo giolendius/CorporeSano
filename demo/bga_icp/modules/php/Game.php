@@ -18,9 +18,11 @@ declare(strict_types=1);
 
 namespace Bga\Games\InCorporeSano;
 
+use Bga\Games\InCorporeSano\States\TurnStart;
 use Bga\Games\InCorporeSano\Systems\Apparato;
 use Bga\Games\InCorporeSano\Systems\BodySystem;
 use Bga\Games\InCorporeSano\Systems\CirBoard;
+use Bga\Games\InCorporeSano\Systems\InfectionZones;
 
 class Game extends \Bga\GameFramework\Table
 {
@@ -242,6 +244,10 @@ class Game extends \Bga\GameFramework\Table
             }
             if ($system === BodySystem::Circulatory) {
                 CirBoard::saveBoats($this, (int) $player_id, CirBoard::initialBoats());
+                CirBoard::initLungO2($this, (int) $player_id);
+            }
+            if ($system === BodySystem::Immune) {
+                InfectionZones::saveZones($this, (int) $player_id, InfectionZones::initialZones());
             }
         }
 
@@ -257,13 +263,11 @@ class Game extends \Bga\GameFramework\Table
 
         // TODO: Setup the initial game situation here.
 
-        // Activate first player once everything has been initialized and ready.
+        // Activate first player (the Circolatorio) once everything is ready.
         $this->activeNextPlayer();
 
-        // Route to the first player's system-specific turn state.
-        return AbstractPlayerTurn::stateFor(
-            $this->getPlayerSystem((int) $this->getActivePlayerId())
-        );
+        // Begin with the start-of-round upkeep, then the heart plays.
+        return TurnStart::class;
     }
 
     /**

@@ -15,18 +15,33 @@ class Immunitario extends Apparato
         return ['virus_triangolare' => 1, 'virus_quadrato' => 1, 'virus_circolare' => 1];
     }
 
+    /** Each action grants a number of "battles" (like Circolatorio's movements). */
+    const ACTIONS = [
+        ['id' => 0, 'label' => 'Attacca (base)',  'cost' => 0, 'battaglie' => 1],
+        ['id' => 1, 'label' => 'Attacca (medio)', 'cost' => 1, 'battaglie' => 2],
+        ['id' => 2, 'label' => 'Attacca (forte)', 'cost' => 2, 'battaglie' => 3],
+    ];
+
     public function getActions(): array
     {
-        return [
-            ['id' => 0, 'label' => clienttranslate('Attacca (base)'),  'cost' => 0],
-            ['id' => 1, 'label' => clienttranslate('Attacca (medio)'), 'cost' => 1],
-            ['id' => 2, 'label' => clienttranslate('Attacca (forte)'), 'cost' => 2],
-        ];
+        return array_map(
+            fn($a) => [
+                'id'        => $a['id'],
+                'label'     => clienttranslate($a['label']),
+                'cost'      => $a['cost'],
+                'battaglie' => $a['battaglie'],
+            ],
+            self::ACTIONS
+        );
     }
 
+    /**
+     * Returns the number of battles for the chosen action. Does NOT touch
+     * resources — those are collected when bacteria are killed (actConfirmBattaglie).
+     */
     public function azione(int $actionId): array
     {
-        $this->game->incPlayerResource($this->playerId, 'virus_triangolare', 1);
-        return [];
+        $action = current(array_filter(self::ACTIONS, fn($a) => $a['id'] === $actionId));
+        return ['battaglie' => $action['battaglie']];
     }
 }

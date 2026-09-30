@@ -39,6 +39,7 @@ class CircolatorioTurn extends AbstractPlayerTurn
             'target'              => $actionData['target'],
             'boats'               => CirBoard::getBoats($this->game, $activePlayerId),
             'graph'               => CirBoard::PATHS,
+            'lung_o2'             => CirBoard::getLungO2($this->game, $activePlayerId),
             'successor_player_id' => $successorPlayerId,
             'successor_resources' => $successorResources,
         ]);
@@ -46,13 +47,36 @@ class CircolatorioTurn extends AbstractPlayerTurn
 
     /**
      * Called after the Circolatorio player finishes moving boats on the client.
-     * Receives and persists the final boat positions.
+     * Receives final boat positions plus O2 loading/unloading deltas.
      */
     #[PossibleAction]
-    public function actConfirmMovimento(#[JsonParam] array $finalBoats, int $activePlayerId, array $args)
-    {
-        // Client-side moves are trusted for now (full BFS validation via CirBoard::validateMoves later).
+    public function actConfirmMovimento(
+        #[JsonParam] array $finalBoats,
+        int $lungSxUsed,
+        int $lungDxUsed,
+        int $reserveO2Gained,
+        int $activePlayerId,
+        array $args
+    ) {
+        $current = CirBoard::getLungO2($this->game, $activePlayerId);
+
+        if ($lungSxUsed < 0 || $lungSxUsed > $current['sx']) throw new \Bga\GameFramework\UserException('Invalid lung_sx_used');
+        if ($lungDxUsed < 0 || $lungDxUsed > $current['dx']) throw new \Bga\GameFramework\UserException('Invalid lung_dx_used');
+        if ($reserveO2Gained < 0) throw new \Bga\GameFramework\UserException('Invalid reserve_o2_gained');
+        foreach ($finalBoats as $b) {
+            $total = (int)($b['o2'] ?? 0) + (int)($b['co2'] ?? 0) + (int)($b['wb'] ?? 0);
+            if ($total > CirBoard::BOAT_CAPACITY) throw new \Bga\GameFramework\UserException('Boat over capacity');
+        }
+
         CirBoard::saveBoats($this->game, $activePlayerId, $finalBoats);
+        CirBoard::saveLungO2(
+            $this->game, $activePlayerId,
+            $current['sx'] - $lungSxUsed,
+            $current['dx'] - $lungDxUsed
+        );
+        if ($reserveO2Gained > 0) {
+            $this->game->incPlayerResource($activePlayerId, 'o2', $reserveO2Gained);
+        }
 
         $this->notify->all('cir_boats_updated', clienttranslate('${player_name} moves the blood'), [
             'player_id'   => $activePlayerId,
@@ -65,8 +89,7 @@ class CircolatorioTurn extends AbstractPlayerTurn
 
     public function zombie(int $playerId)
     {
-        // Confirm with unchanged boat positions.
         $boats = CirBoard::getBoats($this->game, $playerId);
-        return $this->actConfirmMovimento($boats, $playerId, $this->getArgs($playerId));
+        return $this->actConfirmMovimento($boats, 0, 0, 0, $playerId, $this->getArgs($playerId));
     }
 }

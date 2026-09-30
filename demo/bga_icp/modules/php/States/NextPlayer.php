@@ -7,6 +7,7 @@ namespace Bga\Games\InCorporeSano\States;
 use Bga\GameFramework\StateType;
 use Bga\Games\InCorporeSano\AbstractPlayerTurn;
 use Bga\Games\InCorporeSano\Game;
+use Bga\Games\InCorporeSano\Systems\BodySystem;
 
 class NextPlayer extends \Bga\GameFramework\States\GameState
 {
@@ -39,6 +40,14 @@ class NextPlayer extends \Bga\GameFramework\States\GameState
             return EndScore::class;
         }
 
-        return AbstractPlayerTurn::stateFor($this->game->getPlayerSystem((int) $nextPlayerId));
+        $nextSystem = $this->game->getPlayerSystem((int) $nextPlayerId);
+
+        // A new round begins when play wraps back to the Circolatorio (first system):
+        // run the start-of-round upkeep before the heart plays.
+        if ($nextSystem === BodySystem::Circulatory) {
+            return TurnStart::class;
+        }
+
+        return AbstractPlayerTurn::stateFor($nextSystem);
     }
 }

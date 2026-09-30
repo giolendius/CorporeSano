@@ -15,6 +15,10 @@ class CirBoard
     // ── Global parameters ───────────────────────────────────────────────────
     const INITIAL_BOATS = 4;
     const BOAT_CAPACITY = 5;   // max (O2 + CO2 + globuli bianchi) per boat
+    const LUNG_INITIAL_O2 = 2; // O2 tokens per lung at game start
+
+    private const LUNG_SX_KEY = 'lung_sx_o2';
+    private const LUNG_DX_KEY = 'lung_dx_o2';
 
     // ── Actions ─────────────────────────────────────────────────────────────
     // cost    = cubetti paid from Digerente's resources
@@ -100,6 +104,30 @@ class CirBoard
             self::setVar($game, $playerId, "boat_{$i}_co2",  (int) ($b['co2'] ?? 0));
             self::setVar($game, $playerId, "boat_{$i}_wb",   (int) ($b['wb']  ?? 0));
         }
+    }
+
+    // ── Lung O2 helpers ──────────────────────────────────────────────────────
+
+    /** Return current O2 for both lungs: ['sx' => int, 'dx' => int]. */
+    public static function getLungO2(Game $game, int $playerId): array
+    {
+        return [
+            'sx' => max(0, self::getVar($game, $playerId, self::LUNG_SX_KEY)),
+            'dx' => max(0, self::getVar($game, $playerId, self::LUNG_DX_KEY)),
+        ];
+    }
+
+    /** Persist O2 amounts for both lungs. Clamps values to [0, LUNG_INITIAL_O2]. */
+    public static function saveLungO2(Game $game, int $playerId, int $sx, int $dx): void
+    {
+        self::setVar($game, $playerId, self::LUNG_SX_KEY, max(0, $sx));
+        self::setVar($game, $playerId, self::LUNG_DX_KEY, max(0, $dx));
+    }
+
+    /** Called once during setupNewGame to initialise both lung O2 values. */
+    public static function initLungO2(Game $game, int $playerId): void
+    {
+        self::saveLungO2($game, $playerId, self::LUNG_INITIAL_O2, self::LUNG_INITIAL_O2);
     }
 
     /**

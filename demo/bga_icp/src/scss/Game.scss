@@ -153,15 +153,38 @@
 
 // ── Game board (right, big colored rectangle) ─────────────────────────────────
 
+// The shared table: one grid with a region per system, all always visible.
+// Heart (cir) is the large central column; imm is a narrow side column; dig and
+// nrv are placeholders for the two systems still to be built.
 #game-board {
     flex: 1;
-    aspect-ratio: 297 / 210; // A4 landscape
+    display: grid;
+    grid-template-areas:
+        "dig cir imm"
+        "nrv cir imm";
+    grid-template-columns: 1fr 2.2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    min-height: 540px;
     background: linear-gradient(135deg, #1a4a6b 0%, #2d6a4f 50%, #7b2d00 100%);
     border-radius: 12px;
     padding: 16px;
     color: #fff;
     position: relative;
     overflow: hidden;
+}
+
+.sub-board {
+    min-width: 0;
+    min-height: 0;
+}
+.sub-board--cir { grid-area: cir; }
+.sub-board--imm { grid-area: imm; }
+#board-dig { grid-area: dig; }
+#board-nrv { grid-area: nrv; }
+.sub-board--placeholder {
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
 }
 
 // ── Circolatorio SVG board ────────────────────────────────────────────────────
@@ -224,7 +247,81 @@
     pointer-events: none;
 }
 
-// ── Player panels ─────────────────────────────────────────────────────────────
+// ── Immunitario special area + board ───────────────────────────────────────────
+
+#player_special_area {
+    width: 300px;
+    flex-shrink: 0;
+    margin-top: 12px;
+    background: linear-gradient(65deg, #06283e 0%, #ef3b09 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #eee;
+
+    &:empty { display: none; }
+
+    .imm-battaglie-counter {
+        font-weight: bold;
+        color: #ffdd00;
+        font-size: 0.9em;
+    }
+    .imm-hint {
+        font-size: 0.8em;
+        color: #aaa;
+    }
+    .imm-dice-display {
+        font-size: 1.3em;
+        font-weight: bold;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: #1e1e1e;
+        border: 1px solid #444;
+        text-align: center;
+        &.imm-dice--ok { color: #44ee44; border-color: #2a5a2a; }
+        &.imm-dice--ko { color: #ee6666; border-color: #5a2a2a; }
+    }
+}
+
+.imm-zone {
+    fill: #2a2a3a;
+    stroke: #666;
+    stroke-width: 2;
+    transition: fill 0.15s, stroke 0.15s;
+    &--empty  { fill: #1a1a1a; stroke: #333; }
+    &--target { stroke: #40aaaa; }
+}
+
+.imm-divider {
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 1;
+}
+
+.imm-virus {
+    stroke: #fff;
+    stroke-width: 1.5;
+    &:hover { filter: brightness(1.2); }
+    &--triangolare { fill: #e0a020; }
+    &--quadrato    { fill: #9040c0; }
+    &--circolare   { fill: #d03030; }
+    &--selected    { stroke: #ffdd00; stroke-width: 3.5; }
+}
+
+.imm-wb {
+    fill: #f5f5f5;
+    stroke: #99bbdd;
+    stroke-width: 1.5;
+    pointer-events: none;
+}
+
+.imm-label {
+    fill: #ddd;
+    pointer-events: none;
+    &--zone  { font-size: 20px; font-weight: bold; fill: #40aaaa; }
+    &--empty { font-size: 13px; fill: #777; font-style: italic; }
+}
+
+// ── BGA summary player areas ─────────────────────────────────────────────────────────────
 
 .system-label {
     font-weight: bold;

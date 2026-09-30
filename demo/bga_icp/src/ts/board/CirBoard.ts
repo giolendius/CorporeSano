@@ -38,6 +38,11 @@ export class CirBoardRenderer {
     private boats: Boat[] = [];
     private selectedBoat: number | null = null;
     private highlighted: Set<string> = new Set();
+    private _distMap: Map<string, number> = new Map();
+    private _lungO2: { sx: number; dx: number } = { sx: 0, dx: 0 };
+    private _o2BoatId: number | null = null;
+    private _onCaricaO2: (() => void) | null = null;
+    private _onScaricaO2: (() => void) | null = null;
     private onBoatClick: BoatClickHandler | null = null;
     private onNodeClick: NodeClickHandler | null = null;
 
@@ -61,6 +66,7 @@ export class CirBoardRenderer {
         this._drawEdges();
         this._drawNodes();
         this._drawBoats();
+        this._drawO2ActionButtons();
     }
 
     /**
@@ -78,12 +84,46 @@ export class CirBoardRenderer {
         this.onBoatClick = null;
         this.onNodeClick = null;
         this.highlighted.clear();
+        this._distMap.clear();
+        // The board is persistent: re-render so stale click listeners (and the
+        // pointer cursor) are dropped from the now non-interactive elements.
+        this.render(this.graph, this.boats);
     }
 
     /** Compute reachable nodes via BFS and re-render with highlights. */
     highlightReachable(path: number, cell: number, steps: number) {
-        this.highlighted = this._bfsReachable(path, cell, steps);
+        this._distMap = this._bfsDistances(path, cell, steps);
+        this.highlighted = new Set(
+            [...this._distMap.entries()].filter(([, d]) => d > 0).map(([k]) => k)
+        );
         this.render(this.graph, this.boats);
+    }
+
+    /** Returns the BFS step cost to reach (path, cell) from the last highlight origin. */
+    getStepCost(path: number, cell: number): number {
+        return this._distMap.get(this._nodeKey(path, cell)) ?? 1;
+    }
+
+    /** Update the lung O2 counts used by the next render call. */
+    setLungO2(lungO2: { sx: number; dx: number }) {
+        this._lungO2 = { ...lungO2 };
+    }
+
+    /**
+     * Register O2 action buttons to overlay the SVG on the next render.
+     * Pass null for a callback to suppress that button.
+     */
+    setO2Actions(boatId: number, onCarica: (() => void) | null, onScarica: (() => void) | null) {
+        this._o2BoatId = boatId;
+        this._onCaricaO2 = onCarica;
+        this._onScaricaO2 = onScarica;
+    }
+
+    /** Remove O2 action buttons from the next render. */
+    clearO2Actions() {
+        this._o2BoatId = null;
+        this._onCaricaO2 = null;
+        this._onScaricaO2 = null;
     }
 
     /** Pure state update — no render. Caller must call render() after. */
@@ -94,6 +134,7 @@ export class CirBoardRenderer {
     /** Pure state update — no render. Caller must call render() after. */
     clearHighlights() {
         this.highlighted.clear();
+        this._distMap.clear();
     }
 
     // ── Geometry ──────────────────────────────────────────────────────────────
@@ -111,6 +152,40 @@ export class CirBoardRenderer {
         const step = SPAN_DEG * DEG / (n + 1);
         const angle = startAngle + (ci + 1) * step;
         return [acx + ARC_R * Math.cos(angle), acy + ARC_R * Math.sin(angle)];
+    }
+
+    // ── O2 action button overlay ──────────────────────────────────────────────
+
+    private _drawO2ActionButtons() {
+        if (this._o2BoatId === null) return;
+        const boat = this.boats.find(b => b.id === this._o2BoatId);
+        if (!boat) return;
+
+        if (this._onCaricaO2) {
+            const [bx, by] = this._cellXY(boat.path, boat.cell);
+            this._drawSvgButton(bx, by - NODE_R - 16, 'Carica O2', this._onCaricaO2);
+        }
+        if (this._onScaricaO2) {
+            this._drawSvgButton(CX, CY - HEART_R - 16, 'Scarica O2', this._onScaricaO2);
+        }
+    }
+
+    private _drawSvgButton(cx: number, cy: number, label: string, onClick: () => void) {
+        const W = 74, H = 22;
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        fo.setAttribute('x', String(cx - W / 2));
+        fo.setAttribute('y', String(cy - H / 2));
+        fo.setAttribute('width', String(W));
+        fo.setAttribute('height', String(H));
+
+        const btn = document.createElement('button');
+        btn.className = 'action-button bgabutton bgabutton_blue';
+        btn.style.cssText = 'width:100%;height:100%;font-size:8px;padding:1px 3px;white-space:nowrap;cursor:pointer;box-sizing:border-box;line-height:1;';
+        btn.textContent = label;
+        btn.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
+
+        fo.appendChild(btn);
+        this.svg.appendChild(fo);
     }
 
     // ── BFS ───────────────────────────────────────────────────────────────────
@@ -132,7 +207,7 @@ export class CirBoardRenderer {
         return adj.filter(n => { const k = this._nodeKey(n.path, n.cell); return seen.has(k) ? false : (seen.add(k), true); });
     }
 
-    private _bfsReachable(startP: number, startC: number, steps: number): Set<string> {
+    private _bfsDistances(startP: number, startC: number, steps: number): Map<string, number> {
         const dist = new Map<string, number>();
         const queue: [number, number, number][] = [[startP, startC, 0]];
         dist.set(this._nodeKey(startP, startC), 0);
@@ -147,9 +222,7 @@ export class CirBoardRenderer {
                 }
             }
         }
-        const result = new Set<string>();
-        dist.forEach((d, k) => { if (d > 0) result.add(k); });
-        return result;
+        return dist;
     }
 
     // ── Drawing ───────────────────────────────────────────────────────────────
@@ -211,6 +284,9 @@ export class CirBoardRenderer {
                     this._text(sx, sy + 14, sideName, 'cir-label--side');
                 });
 
+                if (cell.name === 'polmone_sx') this._drawLungZone(x, y, pi, ci, this._lungO2.sx);
+                if (cell.name === 'polmone_dx') this._drawLungZone(x, y, pi, ci, this._lungO2.dx);
+
                 // Suppress unused variable warning for acx/acy (used only for arc centers in edges)
                 void acx; void acy;
             });
@@ -237,14 +313,114 @@ export class CirBoardRenderer {
                     `cir-boat${sel ? ' cir-boat--selected' : ''}`,
                     `boat-${boat.id}`, -3, -3
                 );
-                this._text(bx + ox, by + 1, String(boat.id), 'cir-boat-label');
+                this._drawBoatIndicators(bx + ox, by, boat);
 
                 if (this.onBoatClick) {
                     el.style.cursor = 'pointer';
-                    el.addEventListener('click', (e) => { e.stopPropagation(); this.onBoatClick!(boat.id); });
+                    el.addEventListener('click', (e) => { e.stopPropagation(); this.onBoatClick?.(boat.id); });
                 }
             });
         });
+    }
+
+    private _drawBoatIndicators(cx: number, cy: number, boat: Boat) {
+        // O2: light-blue circle INSIDE the boat circle
+        if (boat.o2 > 0) {
+            const o2c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            o2c.setAttribute('cx', String(cx)); o2c.setAttribute('cy', String(cy));
+            o2c.setAttribute('r', '5');
+            o2c.setAttribute('fill', '#4fc3f7');
+            o2c.style.pointerEvents = 'none';
+            this.svg.appendChild(o2c);
+
+            const o2t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            o2t.setAttribute('x', String(cx)); o2t.setAttribute('y', String(cy));
+            o2t.setAttribute('text-anchor', 'middle'); o2t.setAttribute('dominant-baseline', 'middle');
+            o2t.setAttribute('font-size', '4'); o2t.setAttribute('font-weight', 'bold');
+            o2t.setAttribute('fill', '#001a2a');
+            o2t.style.pointerEvents = 'none';
+            o2t.textContent = `${boat.o2}O2`;
+            this.svg.appendChild(o2t);
+        }
+
+        // CO2 and GB: small dots below the boat
+        const slots = [
+            { val: boat.co2, fill: '#888888', textFill: '#fff' },
+            { val: boat.wb,  fill: '#eeeeee', textFill: '#222' },
+        ].filter(s => s.val > 0);
+
+        if (slots.length === 0) return;
+        const DOT_R = 3.5;
+        const SPACING = 9;
+        const startX = cx - ((slots.length - 1) * SPACING) / 2;
+        const dotY = cy + BOAT_R + DOT_R + 2;
+
+        slots.forEach((slot, i) => {
+            const dx = startX + i * SPACING;
+            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dot.setAttribute('cx', String(dx)); dot.setAttribute('cy', String(dotY));
+            dot.setAttribute('r', String(DOT_R));
+            dot.setAttribute('fill', slot.fill); dot.setAttribute('stroke', '#333');
+            dot.setAttribute('stroke-width', '0.5');
+            dot.style.pointerEvents = 'none';
+            this.svg.appendChild(dot);
+
+            const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            txt.setAttribute('x', String(dx)); txt.setAttribute('y', String(dotY));
+            txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dominant-baseline', 'middle');
+            txt.setAttribute('font-size', '4'); txt.setAttribute('fill', slot.textFill);
+            txt.style.pointerEvents = 'none';
+            txt.textContent = String(slot.val);
+            this.svg.appendChild(txt);
+        });
+    }
+
+    private _drawLungZone(cellX: number, cellY: number, pi: number, ci: number, o2: number) {
+        void ci;
+        const [acx, acy] = this._arcCenter(pi);
+        const dx = cellX - acx;
+        const dy = cellY - acy;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        const LUNG_DIST = 48;
+        const lx = cellX + (dx / len) * LUNG_DIST;
+        const ly = cellY + (dy / len) * LUNG_DIST;
+
+        // Dashed connector
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', String(cellX)); line.setAttribute('y1', String(cellY));
+        line.setAttribute('x2', String(lx));    line.setAttribute('y2', String(ly));
+        line.setAttribute('stroke', '#4fc3f7'); line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke-dasharray', '4 3');
+        line.style.pointerEvents = 'none';
+        this.svg.appendChild(line);
+
+        // Lung ellipse background
+        const ell = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+        ell.setAttribute('cx', String(lx)); ell.setAttribute('cy', String(ly));
+        ell.setAttribute('rx', '24'); ell.setAttribute('ry', '17');
+        ell.setAttribute('fill', '#0d2b3a'); ell.setAttribute('stroke', '#4fc3f7');
+        ell.setAttribute('stroke-width', '1.5');
+        ell.style.pointerEvents = 'none';
+        this.svg.appendChild(ell);
+
+        // O2 circle inside lung
+        const o2c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        o2c.setAttribute('cx', String(lx)); o2c.setAttribute('cy', String(ly));
+        o2c.setAttribute('r', '11');
+        o2c.setAttribute('fill', '#4fc3f7'); o2c.setAttribute('stroke', '#fff');
+        o2c.setAttribute('stroke-width', '0.5');
+        o2c.style.pointerEvents = 'none';
+        this.svg.appendChild(o2c);
+
+        // "x O2" text
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', String(lx)); txt.setAttribute('y', String(ly));
+        txt.setAttribute('text-anchor', 'middle'); txt.setAttribute('dominant-baseline', 'middle');
+        txt.setAttribute('font-size', '6.5'); txt.setAttribute('font-weight', 'bold');
+        txt.setAttribute('fill', '#001a2a');
+        txt.style.pointerEvents = 'none';
+        txt.textContent = `${o2} O2`;
+        this.svg.appendChild(txt);
     }
 
     // ── SVG helpers ───────────────────────────────────────────────────────────
@@ -282,7 +458,7 @@ export class CirBoardRenderer {
             const reachable = this.highlighted.size === 0 || this.highlighted.has(this._nodeKey(path, cell));
             if (reachable) {
                 el.style.cursor = 'pointer';
-                el.addEventListener('click', () => this.onNodeClick!(path, cell));
+                el.addEventListener('click', () => this.onNodeClick?.(path, cell));
             }
         }
 

@@ -15,6 +15,7 @@ use Bga\Games\InCorporeSano\States\NextPlayer;
 use Bga\Games\InCorporeSano\Systems\Apparato;
 use Bga\Games\InCorporeSano\Systems\BodySystem;
 use Bga\Games\InCorporeSano\Systems\CirBoard;
+use Bga\Games\InCorporeSano\Systems\InfectionZones;
 
 /**
  * Shared logic for every apparato's turn. Each body system has its own concrete
@@ -71,9 +72,11 @@ abstract class AbstractPlayerTurn extends GameState
             $apparato->getActions()
         );
 
-        // The Circolatorio board (heart + blood boats) is permanent game state, visible
-        // to every player at all times (not only during Circolatorio's own turn).
+        // Board state is permanent and visible to every player at all times (not only
+        // during that system's own turn): the Circolatorio board (heart + blood boats)
+        // and the infection zones (fought by the Immunitario).
         $circulatoryPlayerId = $this->game->getPlayerBySystem(BodySystem::Circulatory);
+        $immunePlayerId      = $this->game->getPlayerBySystem(BodySystem::Immune);
 
         return [
             'system'             => $system->value,
@@ -82,6 +85,8 @@ abstract class AbstractPlayerTurn extends GameState
             'actions'            => $actions,
             'boats'              => CirBoard::getBoats($this->game, $circulatoryPlayerId),
             'graph'              => CirBoard::PATHS,
+            'lung_o2'            => CirBoard::getLungO2($this->game, $circulatoryPlayerId),
+            'zones'              => InfectionZones::getZones($this->game, $immunePlayerId),
         ];
     }
 

@@ -14,6 +14,7 @@ interface GameAction {
     available: boolean;     // true if successor has enough
     movements?: number;     // Circolatorio only: boat steps granted
     target?: 'one' | 'all'; // Circolatorio only: one boat or all boats
+    battaglie?: number;     // Immunitario only: battles granted
 }
 
 interface PlayerTurnArgs {
@@ -23,6 +24,8 @@ interface PlayerTurnArgs {
     actions: GameAction[];
     boats: Boat[];
     graph: CirPathCell[][];
+    lung_o2: { sx: number; dx: number };
+    zones: ImmZone[];
 }
 
 interface AzioneNotifArgs {
@@ -55,6 +58,7 @@ interface CirStartMovementNotif {
     target: 'one' | 'all';
     boats: Boat[];
     graph: CirPathCell[][];
+    lung_o2: { sx: number; dx: number };
     successor_player_id: number;
     successor_resources: Record<string, number>;
 }
@@ -63,4 +67,36 @@ interface CirBoatsUpdatedNotif {
     player_id: number;
     player_name: string;
     boats: Boat[];
+}
+
+// ── Immunitario ────────────────────────────────────────────────────────────
+type VirusType = 'triangolare' | 'quadrato' | 'circolare';
+
+interface ImmZone {
+    id: 'a' | 'b' | 'c' | 'd';
+    bacteria: VirusType[];            // bacteria present (can mix shapes)
+    wb: number;                       // white blood cells in the zone
+}
+
+interface ImmCombatEntry { faces: number; threshold: number; }
+type ImmCombat = Record<VirusType, ImmCombatEntry>;
+
+interface ImmStartBattleNotif {
+    player_id: number;
+    battaglie: number;
+    zones: ImmZone[];
+    combat: ImmCombat;
+    successor_player_id: number;
+    successor_resources: Record<string, number>;
+}
+
+interface ImmBacteriaUpdatedNotif {
+    player_id: number;
+    player_name: string;
+    zones: ImmZone[];
+    resources: Record<string, number>;
+}
+
+interface ZonesSpawnedNotif {
+    zones: ImmZone[];
 }
