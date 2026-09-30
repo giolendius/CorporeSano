@@ -1,0 +1,16 @@
+.idea/
+**/.vscode
+**/.venv
+
+*.cpython-312.pyc
+uv.lock
+**.DS_Store
+
+*.env
+**/sftp.json
+
+
+**/node_modules/
+**/modules/js/
+**/modules/css/
+website/plan

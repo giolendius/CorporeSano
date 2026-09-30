@@ -4,7 +4,8 @@ from typing import ClassVar
 import logging
 import random
 
-from scripts.azioni import azz_imm, azioni_cervello, azioni_dig, azioni_circol, Azione
+from scripts.azioni import (azioni_imm, azioni_cervello, azioni_dig, azioni_circol,
+                            Azione, AzioneIm, AzioneCirc)
 
 
 def setup_logger(
@@ -40,10 +41,10 @@ class Apparato(ABC):
     def aumenta_potenziamento(self):
         self.livello_potenziamento += 1
 
-    def potenzia(self, costo: int = 3):
-        if costo <= self.risorsa:
+    def potenzia(self):
+        if self.COSTO_POTENZIAMENTO <= self.risorsa:
             old = self.risorsa
-            self.paga_x(costo)
+            self.paga_x(self.COSTO_POTENZIAMENTO)
             self.aumenta_potenziamento()
             self.logger.info(f"r={old:<3}Potenziato! livello {self.livello_potenziamento}. New r={self.risorsa:<3}")
         else:
@@ -97,11 +98,23 @@ class Apparato(ABC):
 
 class Cuore(Apparato):
     COSTO_POTENZIAMENTO: ClassVar[int] = 4  # coerente con potenzia() sotto
-
     AZIONI: ClassVar[list[Azione]] = azioni_circol
+    goccia_sangue_corrente = 0
+    step_sangue = [{'cur': 0, 'tot': 5, 'type': 'O2'},
+                   {'cur': 0, 'tot': 3, 'type': 'not'}]
 
-    def potenzia(self, costo: int = 3):
-        super().potenzia(4)
+    def _on_azione(self, azione: AzioneCirc):
+        movimenti = azione.movimenti
+        while movimenti:
+            step = self.step_sangue[self.goccia_sangue_corrente]
+            step['cur'] += 1
+            movimenti -= 1
+            if (step['cur'] ==
+                    step['tot']):
+                step['cur'] = 0
+                if step['type'] == 'O2':
+                    self.risorsa += 5
+                self.goccia_sangue_corrente = (self.goccia_sangue_corrente + 1) % len(self.step_sangue)
 
 
 class Stomaco(Apparato):
@@ -109,9 +122,9 @@ class Stomaco(Apparato):
 
 
 class Immunitario(Apparato):
-    AZIONI: ClassVar[list[Azione]] = azz_imm
+    AZIONI: ClassVar[list[Azione]] = azioni_imm
 
-    def _on_azione(self, azione: Azione):
+    def _on_azione(self, azione: AzioneIm):
         p = min(0.5 + self.livello_potenziamento * 0.05, 0.7)
         hits = sum(1 for _ in range(azione.n_dadi) if random.random() < p)
         self.risorsa += hits

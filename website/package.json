@@ -1,0 +1,32 @@
+{
+  "name": "i-c-s-website",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/extract-assets.mjs --if-missing",
+    "dev": "vite",
+    "prebuild": "node scripts/extract-assets.mjs",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.app.json",
+    "assets": "node scripts/extract-assets.mjs"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "gsap": "^3.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "sharp": "^0.35.5",
+    "tailwindcss": "^3.4.13",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.8"
+  }
+}

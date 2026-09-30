@@ -1,0 +1,368 @@
+/**
+ *------
+ * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
+ * InCorporeSano implementation : © <Your name here> <Your email address here>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ */
+
+/*
+    This is the CSS stylesheet of your game User Interface.
+    
+    Styles defined on this file will be applied to HTML elements you create (in Game.js).
+    
+    Usually, you are using CSS to:
+    
+    1°) define the overall layout of your game
+        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+
+    2°) create your CSS-sprites:
+        All images of your games should be gathered into a small number of image files. Then, using
+        background-image and background-position CSS properties, you create HTML blocks that can 
+        display these images correctly (see example below).
+    
+    3°) ... anything else:
+        It is really easy to add and remove CSS classes dynamically from your Javascript with
+        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
+        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
+        very often, using CSS classes for the logic of your user interface allow you to do complex
+        thing easily.
+        
+        
+     Note: on the production platform, this file will be compressed and comments will be removed.
+           Consequently, don't hesitate to put as many comments as necessary.
+*/
+
+
+/********* You can start writing your SCSS below this line: **********/
+
+// ── Layout ───────────────────────────────────────────────────────────────────
+
+#ics-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+#game-content {
+    flex: 1;
+}
+
+// ── Player board  ───────────────────────────────
+
+#player-board {
+    width: 300px;
+    height: 200px;
+    flex-shrink: 0;
+    display: flex;
+    border: 2px solid #555;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e1e1e;
+}
+
+.pb-left {
+    width: 100px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #444;
+    padding: 6px;
+    text-align: center;
+}
+
+.pb-system-name {
+    font-weight: bold;
+    font-size: 0.8em;
+    color: #eee;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    word-break: break-word;
+}
+
+.pb-right {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+// Upgrade buttons: horizontal row, always visible
+.pb-upgrade-row {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    padding: 6px;
+    border-bottom: 1px solid #444;
+    flex-shrink: 0;
+}
+
+.pb-btn {
+    flex: 1;
+    font-size: 0.58em !important;
+    padding: 4px 2px !important;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+
+    &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        filter: grayscale(60%);
+    }
+}
+
+// Actions list: fills remaining height, scrollable
+.pb-actions-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.pb-action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 8px;
+    font-size: 0.7em;
+    color: #ccc;
+    border-bottom: 1px solid #2d2d2d;
+    cursor: default;
+    gap: 6px;
+
+    &:last-child { border-bottom: none; }
+
+    &.pb-action--locked    { opacity: 0.35; }
+    &.pb-action--unavailable { opacity: 0.22; }
+
+    &.pb-action--available {
+        cursor: pointer;
+        opacity: 1;
+        color: #fff;
+        &:hover { background: #3a3a3a; }
+    }
+}
+
+.pb-action-name { flex: 1; }
+.pb-action-cost { color: #888; font-size: 0.85em; white-space: nowrap; }
+
+// ── Game board (right, big colored rectangle) ─────────────────────────────────
+
+// The shared table: one grid with a region per system, all always visible.
+// Heart (cir) is the large central column; imm is a narrow side column; dig and
+// nrv are placeholders for the two systems still to be built.
+#game-board {
+    flex: 1;
+    display: grid;
+    grid-template-areas:
+        "dig cir imm"
+        "nrv cir imm";
+    grid-template-columns: 1fr 2.2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    min-height: 540px;
+    background: linear-gradient(135deg, #1a4a6b 0%, #2d6a4f 50%, #7b2d00 100%);
+    border-radius: 12px;
+    padding: 16px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.sub-board {
+    min-width: 0;
+    min-height: 0;
+}
+.sub-board--cir { grid-area: cir; }
+.sub-board--imm { grid-area: imm; }
+#board-dig { grid-area: dig; }
+#board-nrv { grid-area: nrv; }
+.sub-board--placeholder {
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+}
+
+// ── Circolatorio SVG board ────────────────────────────────────────────────────
+
+.cir-edge {
+    stroke: #999;
+    stroke-width: 2;
+    fill: none;
+}
+.cir-arrow-head {
+    fill: #999;
+}
+.cir-edge--side {
+    stroke: #555;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+    fill: none;
+}
+
+.cir-node {
+    fill: #2a2a3a;
+    stroke: #888;
+    stroke-width: 1.5;
+    transition: fill 0.15s;
+    cursor: pointer;
+    &:hover { fill: #3a3a5a; }
+    &--heart { fill: #7b1010; stroke: #e04040; stroke-width: 2; }
+    &--named { fill: #1a3a3a; stroke: #40aaaa; }
+    &--side  { fill: #1a1a2a; stroke: #555; cursor: default; }
+    &--reachable { fill: #2a5a2a; stroke: #44ee44; stroke-width: 2.5; }
+}
+
+.cir-boat {
+    fill: #cc2222;
+    stroke: #fff;
+    stroke-width: 1.5;
+    &--selected { fill: #ff6666; stroke: #ffdd00; stroke-width: 2.5; }
+}
+.cir-boat-label {
+    font-size: 8px;
+    fill: #fff;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.cir-label        { font-size: 14px; fill: #fff; font-weight: bold; pointer-events: none; }
+.cir-label--small { font-size: 8px;  fill: #aaa; pointer-events: none; }
+.cir-label--side  { font-size: 7px;  fill: #888; pointer-events: none; }
+
+.cir-passi-counter {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0,0,0,0.7);
+    color: #ffdd00;
+    font-size: 1em;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+// ── Immunitario special area + board ───────────────────────────────────────────
+
+#player_special_area {
+    width: 300px;
+    flex-shrink: 0;
+    margin-top: 12px;
+    background: linear-gradient(65deg, #06283e 0%, #ef3b09 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #eee;
+
+    &:empty { display: none; }
+
+    .imm-battaglie-counter {
+        font-weight: bold;
+        color: #ffdd00;
+        font-size: 0.9em;
+    }
+    .imm-hint {
+        font-size: 0.8em;
+        color: #aaa;
+    }
+    .imm-dice-display {
+        font-size: 1.3em;
+        font-weight: bold;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: #1e1e1e;
+        border: 1px solid #444;
+        text-align: center;
+        &.imm-dice--ok { color: #44ee44; border-color: #2a5a2a; }
+        &.imm-dice--ko { color: #ee6666; border-color: #5a2a2a; }
+    }
+}
+
+.imm-zone {
+    fill: #2a2a3a;
+    stroke: #666;
+    stroke-width: 2;
+    transition: fill 0.15s, stroke 0.15s;
+    &--empty  { fill: #1a1a1a; stroke: #333; }
+    &--target { stroke: #40aaaa; }
+}
+
+.imm-divider {
+    stroke: rgba(255, 255, 255, 0.12);
+    stroke-width: 1;
+}
+
+.imm-virus {
+    stroke: #fff;
+    stroke-width: 1.5;
+    &:hover { filter: brightness(1.2); }
+    &--triangolare { fill: #e0a020; }
+    &--quadrato    { fill: #9040c0; }
+    &--circolare   { fill: #d03030; }
+    &--selected    { stroke: #ffdd00; stroke-width: 3.5; }
+}
+
+.imm-wb {
+    fill: #f5f5f5;
+    stroke: #99bbdd;
+    stroke-width: 1.5;
+    pointer-events: none;
+}
+
+.imm-label {
+    fill: #ddd;
+    pointer-events: none;
+    &--zone  { font-size: 20px; font-weight: bold; fill: #40aaaa; }
+    &--empty { font-size: 13px; fill: #777; font-style: italic; }
+}
+
+// ── BGA summary player areas ─────────────────────────────────────────────────────────────
+
+.system-label {
+    font-weight: bold;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.player-resources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.resource {
+    font-size: 0.8em;
+    background: #eda2a2;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+
+/*
+    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
+
+    .white_token {
+        background-image: url('img/tokens.png');
+        background-position: 0px 0px;
+    }
+    .black_token {
+        background-image: url('img/tokens.png');
+        background-position: -20px 0px;
+    }
+    .token {
+        width: 20px;
+        height: 20px;
+        background-repeat: none;
+    }
+*/
+
+
+
+
