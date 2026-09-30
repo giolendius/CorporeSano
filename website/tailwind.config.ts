@@ -5,11 +5,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        circolatorio: '#C0392B',
-        digerente: '#27AE60',
-        immunitario: '#1A3A5C',
-        nervoso: '#1C1C1C',
-        base: '#0D0D0D',
+        plasma: 'var(--plasma)',
+        arteria: 'var(--arteria)',
+        brace: 'var(--brace)',
+        osso: 'var(--osso)',
+        'osso-2': 'var(--osso-2)',
+        sys: {
+          light: 'var(--sys-light)',
+          dark: 'var(--sys-dark)',
+          bg: 'var(--sys-bg)',
+        },
+      },
+      fontFamily: {
+        cinzel: ['Cinzel', 'Georgia', 'serif'],
+        nunito: ['Nunito', 'system-ui', 'sans-serif'],
+        anton: ['Anton', 'Impact', 'sans-serif'],
+        script: ['"Mr Dafoe"', 'cursive'],
       },
     },
   },
