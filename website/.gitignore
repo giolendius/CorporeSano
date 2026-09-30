@@ -2,3 +2,4 @@ node_modules
 dist
 # Generati da scripts/extract-assets.mjs a partire da src/assets (prebuild / predev)
 public/img
+.vite

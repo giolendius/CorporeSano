@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import type { SystemDef } from '../../data/systems'
+import { useLang } from '../../i18n/LangContext'
 import { SystemIcon } from '../icons/SystemIcon'
 import { Picture } from '../Picture'
 import { Orbit } from './Orbit'
@@ -10,6 +11,7 @@ import { Orbit } from './Orbit'
  */
 export const Portal = forwardRef<HTMLDivElement, { system: SystemDef }>(function Portal({ system }, ref) {
   const { id } = system
+  const { t } = useLang()
   return (
     <div className="portal-area">
       <SystemIcon system={id} className="portal-giant" strokeWidth={0.9} size="104%" />
@@ -36,7 +38,7 @@ export const Portal = forwardRef<HTMLDivElement, { system: SystemDef }>(function
             name={`portrait-${id}`}
             widths={[236, 472]}
             sizes="236px"
-            alt={`${system.prefix} ${system.name}: il personaggio`}
+            alt={t.systems.portraitAlt(system.fullName)}
           />
         </div>
       </div>

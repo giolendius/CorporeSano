@@ -1,44 +1,35 @@
-import { GAME_FACTS, SYSTEMS } from '../../data/systems'
-import { SystemTile } from './SystemTile'
+import { useLang } from '../../i18n/LangContext'
+import { AsymmetryBadge } from './AsymmetryBadge'
+import { CoopBadge } from './CoopBadge'
+import { Dilemma } from './Dilemma'
+import { PillarCard } from './PillarCard'
 
 interface Props {
   onSelectSystem: (index: number, iconEl: HTMLElement) => void
 }
 
 /**
- * Contenuto dello screen 2. Scorre nel flusso normale sopra la stage pinnata (margine negativo),
- * le righe `.reveal-line` vengono accese da Dive a progress 0.7.
+ * Contenuto dello screen 2. Scorre nel flusso normale sopra la stage pinnata (margine negativo):
+ * kicker e headline (`.reveal-line`) li accende Dive a progress 0.85, card e frase arrivano con lo scroll.
  */
 export function Summary({ onSelectSystem }: Props) {
+  const { t } = useLang()
+  const s = t.summary
   return (
     <section id="il-gioco" className="summary" aria-labelledby="summary-title">
       <div className="mx-auto max-w-[460px]">
-        <p className="reveal-line text-[15px] font-extrabold text-brace">Il gioco</p>
-        <h2 id="summary-title" className="mt-3 font-cinzel text-[34px] font-bold leading-[1.08] text-osso">
-          <span className="reveal-line block">Sei dentro.</span>
-          <span className="reveal-line block">Quattro sistemi,</span>
-          <span className="reveal-line block">un solo corpo.</span>
+        <p className="reveal-line text-[15px] font-extrabold text-brace">{s.kicker}</p>
+        <h2 id="summary-title" className="mt-2 font-cinzel text-[32px] font-bold leading-[1.08] text-osso">
+          <span className="reveal-line block">{s.headline[0]}</span>
+          <span className="reveal-line block">{s.headline[1]}</span>
         </h2>
-        <p className="reveal-line mt-4 text-osso">
-          Gioco cooperativo: ogni giocatore guida un sistema del corpo. Qui andrà la descrizione breve.
-        </p>
 
-        <ul className="mt-6 grid grid-cols-3 gap-2.5">
-          {GAME_FACTS.map((f) => (
-            <li key={f.label} className="reveal-line stat">
-              <span className="block font-cinzel text-[22px] font-bold leading-tight text-osso">{f.value}</span>
-              <span className="block text-[14px] text-osso-2">{f.label}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-6 flex flex-col gap-3">
+          <PillarCard badge={<CoopBadge />} title={s.coop.title} text={s.coop.text} />
+          <PillarCard badge={<AsymmetryBadge onSelect={onSelectSystem} />} title={s.asym.title} text={s.asym.text} />
+        </div>
 
-        <ul className="mt-5 grid grid-cols-2 gap-3" aria-label="I quattro sistemi">
-          {SYSTEMS.map((s, i) => (
-            <li key={s.id} className="reveal-tile">
-              <SystemTile system={s} onSelect={(icon) => onSelectSystem(i, icon)} />
-            </li>
-          ))}
-        </ul>
+        <Dilemma />
       </div>
     </section>
   )

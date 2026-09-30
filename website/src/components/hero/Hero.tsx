@@ -1,3 +1,4 @@
+import { useLang } from '../../i18n/LangContext'
 import { img } from '../../lib/img'
 import { Picture } from '../Picture'
 import { BloodCells } from './BloodCells'
@@ -11,6 +12,7 @@ interface Props {
  * I wrapper `.layer[data-depth]` ricevono il parallax; gli elementi interni le animazioni GSAP.
  */
 export function Hero({ onDiscover }: Props) {
+  const { t } = useLang()
   return (
     <>
       <div className="layer" data-depth="0.3">
@@ -24,7 +26,7 @@ export function Hero({ onDiscover }: Props) {
               name="hero-characters"
               widths={[390, 780, 1054]}
               sizes="(min-width: 900px) 560px, 150vw"
-              alt="Cuore, cervello, globulo bianco e intestino pronti a combattere"
+              alt={t.hero.charactersAlt}
               priority
             />
           </div>
@@ -75,12 +77,12 @@ export function Hero({ onDiscover }: Props) {
 
       <div className="hero-copy">
         <p className="hero-line text-[17px] leading-[1.45] text-osso">
-          Il corpo è sotto attacco.
+          {t.hero.lines[0]}
           <br />
-          Scegli il tuo organo e combatti.
+          {t.hero.lines[1]}
         </p>
         <button type="button" className="hero-cta cta-btn" onClick={onDiscover}>
-          Scopri il gioco
+          {t.hero.cta}
         </button>
         <span className="hero-drop mt-2" aria-hidden="true" />
       </div>

@@ -1,5 +1,6 @@
 import { forwardRef, type CSSProperties } from 'react'
 import { SYSTEMS, type SystemDef, type SystemId } from '../../data/systems'
+import { useLang } from '../../i18n/LangContext'
 import { img } from '../../lib/img'
 import { Portal } from './Portal'
 import { Reserve } from './Reserve'
@@ -78,6 +79,7 @@ export const SystemPanel = forwardRef<HTMLDivElement, Props>(function SystemPane
   { system, index, active, portalRef },
   ref,
 ) {
+  const { t } = useLang()
   const orn = ORNAMENTS[system.id]
   const last = index === SYSTEMS.length - 1
   return (
@@ -86,7 +88,7 @@ export const SystemPanel = forwardRef<HTMLDivElement, Props>(function SystemPane
       data-system={system.id}
       className={`sys-panel sys-bg ${active ? 'is-active' : ''}`}
       aria-hidden={!active}
-      aria-label={`${system.prefix} ${system.name}`}
+      aria-label={system.fullName}
     >
       {system.id === 'circ' && <CircEcg />}
       {orn.top && <Ornament id={system.id} pos="top" def={orn.top} />}
@@ -94,7 +96,7 @@ export const SystemPanel = forwardRef<HTMLDivElement, Props>(function SystemPane
 
       <div className="sys-panel__inner">
         <p className="sys-step">
-          Sistema {index + 1} di {SYSTEMS.length}
+          {t.systems.step(index + 1, SYSTEMS.length)}
         </p>
         <SystemTitle system={system} />
         <Portal ref={portalRef} system={system} />
@@ -103,7 +105,7 @@ export const SystemPanel = forwardRef<HTMLDivElement, Props>(function SystemPane
           <p>{system.description}</p>
         </div>
         <Reserve system={system} />
-        <p className="sys-hint">{last ? 'Scorri per continuare' : 'Scorri per il prossimo sistema'}</p>
+        <p className="sys-hint">{last ? t.systems.hintLast : t.systems.hintNext}</p>
       </div>
     </article>
   )

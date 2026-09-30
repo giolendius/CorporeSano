@@ -1,65 +1,37 @@
 export type SystemId = 'circ' | 'dig' | 'imm' | 'ner'
 
-export interface SystemDef {
+/** Parte strutturale di un sistema, uguale in tutte le lingue. */
+export interface SystemBase {
   id: SystemId
-  /** Script sopra il nome: "Apparato" o "Sistema". */
-  prefix: string
-  name: string
-  /** Nome breve usato nei tile e nella nav. */
-  short: string
-  resource: string
-  headline: string
-  description: string
   reserve: { filled: number; total: number }
 }
 
-export const SYSTEMS: readonly SystemDef[] = [
-  {
-    id: 'circ',
-    prefix: 'Apparato',
-    name: 'Circolatorio',
-    short: 'Circolatorio',
-    resource: 'Ossigeno',
-    headline: 'Il motore del corpo',
-    description: "Spinge l'ossigeno ovunque e muove le barchette del sangue.",
-    reserve: { filled: 4, total: 7 },
-  },
-  {
-    id: 'dig',
-    prefix: 'Apparato',
-    name: 'Digerente',
-    short: 'Digerente',
-    resource: 'Nutrienti',
-    headline: "La fabbrica dell'energia",
-    description: 'Scompone il cibo e assorbe i nutrienti per tutta la squadra.',
-    reserve: { filled: 4, total: 7 },
-  },
-  {
-    id: 'imm',
-    prefix: 'Sistema',
-    name: 'Immunitario',
-    short: 'Immunitario',
-    resource: 'Virus sconfitti',
-    headline: 'La prima linea',
-    description: 'Combatte le infiammazioni e crea anticorpi dove serve.',
-    reserve: { filled: 4, total: 7 },
-  },
-  {
-    id: 'ner',
-    prefix: 'Sistema',
-    name: 'Nervoso',
-    short: 'Nervoso',
-    // Soft hyphen: nei tile stretti va a capo come "Neuro-trasmettitori".
-    resource: 'Neuro­trasmettitori',
-    headline: 'La regia di tutto',
-    description: 'Coordina le azioni e decide cosa mangia il corpo.',
-    reserve: { filled: 4, total: 7 },
-  },
+/** Testi di un sistema in una lingua (vedi src/i18n/strings.ts). */
+export interface SystemText {
+  /** Script sopra il nome: "Apparato"/"Sistema", "System". */
+  prefix: string
+  /** Nome nel bastone del titolo. */
+  name: string
+  /** Nome completo per aria-label e alt: "Apparato Circolatorio", "Circulatory System". */
+  fullName: string
+  resource: string
+  headline: string
+  description: string
+}
+
+export type SystemDef = SystemBase & SystemText
+
+export const SYSTEMS: readonly SystemBase[] = [
+  { id: 'circ', reserve: { filled: 4, total: 7 } },
+  { id: 'dig', reserve: { filled: 4, total: 7 } },
+  { id: 'imm', reserve: { filled: 4, total: 7 } },
+  { id: 'ner', reserve: { filled: 4, total: 7 } },
 ]
 
-/** Contenuti segnaposto (da sostituire, vedi spec). */
-export const GAME_FACTS = [
-  { value: '2–4', label: 'giocatori' },
-  { value: "60'", label: 'durata' },
-  { value: '10+', label: 'età' },
-] as const
+/** `--sys-light` di ogni sistema, per il canvas (che non legge le variabili CSS a ogni frame). */
+export const SYSTEM_COLORS: Record<SystemId, string> = {
+  circ: '#F67D71',
+  dig: '#B1DA8B',
+  imm: '#81C2F3',
+  ner: '#B4B4B4',
+}

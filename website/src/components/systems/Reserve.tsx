@@ -1,14 +1,16 @@
 import type { SystemDef } from '../../data/systems'
+import { useLang } from '../../i18n/LangContext'
 import { SystemIcon } from '../icons/SystemIcon'
 
 /** Box Riserva, stessa forma dei fogli: gettoni pieni o vuoti (vuoti al 22%). */
 export function Reserve({ system }: { system: SystemDef }) {
+  const { t } = useLang()
   const { filled, total } = system.reserve
   return (
-    <div className="reserve" aria-label={`Riserva: ${filled} su ${total} ${system.resource}`}>
+    <div className="reserve" aria-label={t.systems.reserveAria(filled, total, system.resource)}>
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-3">
-          <span className="reserve__label">RISERVA</span>
+          <span className="reserve__label">{t.systems.reserveLabel}</span>
           <SystemIcon system={system.id} size={24} className="text-sys-light" />
         </span>
         <span className="text-[14px] text-osso-2">{system.resource}</span>

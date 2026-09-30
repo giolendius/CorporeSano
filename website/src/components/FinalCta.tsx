@@ -1,42 +1,53 @@
+import { useLang } from '../i18n/LangContext'
 import { Picture } from './Picture'
 
-/** Sezione finale: il fondo torna al plasma rosso. Link segnaposto. */
-export function FinalCta() {
-  return (
-    <section className="final-cta px-6 pb-10 pt-24" aria-labelledby="cta-title">
-      <div className="relative mx-auto flex max-w-[460px] flex-col items-center text-center">
-        <p className="text-[15px] font-extrabold text-brace">Unisciti alla squadra</p>
-        <h2 id="cta-title" className="mt-3 font-cinzel text-[34px] font-bold leading-[1.08] text-osso">
-          Il corpo ha bisogno di te.
-        </h2>
-        <p className="mt-4 text-osso-2">
-          Quattro sistemi, una sola partita. Collaborate, gestite le risorse e respingete l'infezione prima che sia
-          troppo tardi.
-        </p>
+const INSTAGRAM_URL = 'https://www.instagram.com/great.gallo.games/'
 
-        <div className="poster-frame mt-8 w-[min(78vw,320px)]">
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4.2" />
+      <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+/** Sezione finale: il fondo torna al plasma rosso, link al profilo Instagram. */
+export function FinalCta() {
+  const { t } = useLang()
+  return (
+    // Un solo schermo come gli altri: spaziature e locandina scalano con l'altezza (svh).
+    <section className="final-cta flex min-h-[100svh] flex-col px-6" aria-labelledby="cta-title">
+      <div className="final-cta__inner relative mx-auto flex w-full max-w-[460px] flex-1 flex-col items-center justify-center text-center">
+        <p className="text-[15px] font-extrabold text-brace">{t.cta.kicker}</p>
+        <h2 id="cta-title" className="mt-2 font-cinzel text-[clamp(26px,4.2svh,34px)] font-bold leading-[1.08] text-osso">
+          {t.cta.title}
+        </h2>
+        <p className="final-cta__text text-osso-2">{t.cta.text}</p>
+
+        <div className="poster-frame">
           <Picture
             name="poster"
             widths={[780, 1054]}
             sizes="min(78vw, 320px)"
-            alt="La locandina di In Corpore Sano"
+            alt={t.cta.posterAlt}
             width={1054}
             height={1490}
-            className="block h-auto w-full"
+            className="block h-full w-full object-cover"
           />
         </div>
 
-        <div className="mt-10 flex w-full flex-col items-center gap-4">
-          <a href="#" className="cta-btn cta-btn--compact">
-            Gioca su Board Game Arena
+        <div className="final-cta__actions flex w-full flex-col items-center gap-2">
+          <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="cta-btn cta-btn--social">
+            <InstagramIcon />
+            {t.cta.instagram}
           </a>
-          <a href="#" className="btn-ghost">
-            Resta aggiornato
-          </a>
+          <span className="text-[14px] text-osso-2">@great.gallo.games</span>
         </div>
       </div>
 
-      <footer className="relative mt-20 text-center text-[13px] text-osso-2 opacity-70">
+      <footer className="relative pb-[max(14px,env(safe-area-inset-bottom))] pt-2 text-center text-[13px] text-osso-2 opacity-70">
         © {new Date().getFullYear()} In Corpore Sano
       </footer>
     </section>

@@ -1,11 +1,23 @@
 import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, useState, type TouchEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { SYSTEMS } from '../../data/systems'
+import { useLang, useSystems } from '../../i18n/LangContext'
 import { gsap, prefersReducedMotion, ScrollTrigger, useGSAP } from '../../lib/gsap'
 import { SystemPanel } from './SystemPanel'
 import { SystemNav } from './SystemNav'
 
 const N = SYSTEMS.length
+/**
+ * Coda del pin dopo l'ultimo sistema (in viewport): senza, il Nervoso coincide con la fine del pin
+ * e basta poco per scivolare via. Con mezza viewport di coda serve una spinta di ~¼ di schermo per uscire
+ * (tra un sistema e l'altro ne serve ~½): trattiene senza sembrare bloccata.
+ */
+const HOLD = 0.5
+const PIN_STEPS = N - 1 + HOLD
+/** Punti di snap (progress): i 4 sistemi + la fine del pin, cioè l'uscita verso la CTA. */
+const SNAP_POINTS = [...SYSTEMS.map((_, i) => i / PIN_STEPS), 1]
+const nearestSnap = (v: number) =>
+  SNAP_POINTS.reduce((best, p) => (Math.abs(p - v) < Math.abs(best - v) ? p : best), SNAP_POINTS[0])
 
 export interface SystemsHandle {
   /** Ingresso dal tile dello screen 2: elemento condiviso tile → portale. */
@@ -30,6 +42,8 @@ export const SystemsSection = forwardRef<SystemsHandle>(function SystemsSection(
   const trigger = useRef<ScrollTrigger | null>(null)
   const running = useRef<gsap.core.Timeline | null>(null)
 
+  const { t } = useLang()
+  const systems = useSystems()
   const [active, setActive] = useState(0)
   const activeRef = useRef(0) // ultimo indice richiesto (anche prima del render)
   const shownRef = useRef(0) // indice effettivamente a video
@@ -46,7 +60,7 @@ export const SystemsSection = forwardRef<SystemsHandle>(function SystemsSection(
   const jumpTo = (index: number) => {
     const st = trigger.current
     if (!st) return
-    window.scrollTo(0, st.start + ((st.end - st.start) * index) / (N - 1))
+    window.scrollTo(0, st.start + ((st.end - st.start) * index) / PIN_STEPS)
     ScrollTrigger.update()
   }
 
@@ -62,11 +76,12 @@ export const SystemsSection = forwardRef<SystemsHandle>(function SystemsSection(
       trigger.current = ScrollTrigger.create({
         trigger: stage.current,
         start: 'top top',
-        end: () => `+=${window.innerHeight * (N - 1)}`,
+        end: () => `+=${window.innerHeight * PIN_STEPS}`,
         pin: true,
         invalidateOnRefresh: true,
-        snap: { snapTo: 1 / (N - 1), duration: { min: 0.2, max: 0.5 }, delay: 0.05, ease: 'power1.inOut' },
-        onUpdate: (self) => change(Math.round(self.progress * (N - 1))),
+        snap: { snapTo: nearestSnap, duration: { min: 0.2, max: 0.5 }, delay: 0.05, ease: 'power1.inOut' },
+        // Durante la coda resta il Nervoso.
+        onUpdate: (self) => change(Math.min(N - 1, Math.round(self.progress * PIN_STEPS))),
         onEnter: () => {
           if (prefersReducedMotion()) return
           const panel = panels.current[shownRef.current]
@@ -234,9 +249,9 @@ export const SystemsSection = forwardRef<SystemsHandle>(function SystemsSection(
   }
 
   return (
-    <section id="sistemi" aria-label="I quattro sistemi">
+    <section id="sistemi" aria-label={t.systems.sectionLabel}>
       <div ref={stage} className="systems-stage" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        {SYSTEMS.map((s, i) => (
+        {systems.map((s, i) => (
           <SystemPanel
             key={s.id}
             ref={(el) => (panels.current[i] = el)}
